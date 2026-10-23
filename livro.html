@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Livro do Jogo — Arena Fighter</title>
+<link rel="stylesheet" href="css/style.css?v=76">
+<style>
+  /* ============================================================
+     LIVRO DO JOGO — manual em formato de livro, com página virada.
+     Página independente do jogo (como admin.html e sheet-debug.html):
+     reaproveita a fonte/paleta de css/style.css, mas o layout é próprio.
+     ============================================================ */
+  html,body{ overflow:auto; }
+  body{ display:flex; flex-direction:column; align-items:center; min-height:100vh; padding:18px 12px 34px; }
+
+  .lv-topo{ text-align:center; margin-bottom:14px; }
+  .lv-topo h1{ font-size:clamp(14px,3vw,22px); color:var(--neon); letter-spacing:2px; text-shadow:2px 2px 0 #000; }
+  .lv-topo p{ font-size:8px; color:#9d86c4; margin-top:6px; }
+
+  .lv-livro{
+    position:relative; width:min(760px,96vw); min-height:520px;
+    background:#120824; border:3px solid #34204f; border-radius:10px;
+    box-shadow:0 0 0 6px #0a0612, 0 10px 30px rgba(0,0,0,.6);
+    display:flex; flex-direction:column;
+  }
+  /* lombada do livro (barra colorida à esquerda) — só enfeite */
+  .lv-livro::before{
+    content:''; position:absolute; left:0; top:0; bottom:0; width:8px;
+    background:linear-gradient(180deg, var(--neon2), var(--cyan));
+    border-radius:10px 0 0 10px;
+  }
+
+  .lv-pagina{
+    flex:1; padding:26px 30px 10px 34px; overflow-y:auto;
+    animation:lvVira .22s ease-out;
+  }
+  @keyframes lvVira{ from{ opacity:0; transform:translateX(14px) rotateY(-4deg); } to{ opacity:1; transform:none; } }
+
+  .lv-pagina h2{ font-size:14px; color:var(--neon); letter-spacing:1px; margin-bottom:12px;
+    text-shadow:1px 1px 0 #000; display:flex; align-items:center; gap:8px; }
+  .lv-pagina h3{ font-size:10px; color:var(--cyan); margin:14px 0 6px; }
+  .lv-pagina p{ font-size:9px; line-height:1.9; color:#d6c6f5; margin-bottom:8px; }
+  .lv-pagina b{ color:#fff; }
+  .lv-pagina i{ color:var(--neon2); font-style:normal; }
+  .lv-pagina ul{ margin:4px 0 10px 16px; }
+  .lv-pagina li{ font-size:9px; line-height:1.9; color:#d6c6f5; margin-bottom:3px; }
+  .lv-pagina code{ background:#1c0e33; border:1px solid #34204f; border-radius:3px; padding:1px 4px; color:var(--cyan); font-size:8px; }
+
+  /* cartinhas de destaque (fórmula, aviso, dica) */
+  .lv-caixa{ background:#1c0e33; border:1px solid #34204f; border-left:3px solid var(--cyan);
+    border-radius:6px; padding:9px 12px; margin:10px 0; font-size:8px; color:#9fd8ff; line-height:1.8; }
+  .lv-caixa.aviso{ border-left-color:#ff6b6b; color:#ffb3b3; }
+  .lv-caixa.dica{ border-left-color:var(--neon); color:#ffe9a8; }
+
+  /* grade de cartas (passivas, tipos, personagens) */
+  .lv-grade{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; margin:8px 0 14px; }
+  .lv-carta{ background:#1c0e33; border:1px solid #34204f; border-radius:6px; padding:8px 10px; }
+  .lv-carta .tit{ font-size:9px; color:#fff; margin-bottom:4px; display:flex; align-items:center; gap:6px; }
+  .lv-carta .desc{ font-size:7.5px; color:#9d86c4; line-height:1.7; }
+
+  /* ficha de personagem */
+  .lv-ficha{ background:#1c0e33; border:1px solid #34204f; border-radius:8px; padding:10px 14px; margin-bottom:10px; }
+  .lv-ficha .cabecalho{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:4px 10px; margin-bottom:5px; }
+  .lv-ficha .nome{ font-size:11px; color:#fff; }
+  .lv-ficha .titulo{ font-size:8px; color:var(--neon2); }
+  .lv-ficha .raca{ font-size:7px; color:var(--cyan); border:1px solid #34204f; border-radius:3px; padding:1px 5px; }
+  .lv-ficha .stats{ font-size:7.5px; color:#9fd8ff; margin-bottom:5px; }
+  .lv-ficha .texto{ font-size:8px; color:#c9b6ea; line-height:1.8; }
+
+  /* sumário clicável */
+  .lv-sumario{ display:flex; flex-direction:column; gap:5px; }
+  .lv-sumario button{
+    text-align:left; background:#1c0e33; border:1px solid #34204f; border-radius:5px;
+    color:#d6c6f5; font-family:var(--pixel); font-size:8.5px; padding:8px 10px; cursor:pointer;
+    display:flex; justify-content:space-between; gap:8px;
+  }
+  .lv-sumario button:hover{ border-color:var(--neon); color:#fff; }
+  .lv-sumario button span{ color:#8a72b5; }
+
+  .lv-capa{ display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; padding:30px 10px; }
+  .lv-capa .emblema{ font-size:52px; margin-bottom:14px; filter:drop-shadow(0 0 10px var(--neon)); }
+  .lv-capa h2{ font-size:20px; justify-content:center; }
+  .lv-capa .sub{ font-size:9px; color:var(--cyan); margin-top:6px; letter-spacing:1px; }
+  .lv-capa .verso{ font-size:8px; color:#8a72b5; margin-top:26px; max-width:420px; line-height:1.9; }
+
+  .lv-rodape{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 18px; border-top:2px solid #221038; flex-wrap:wrap;
+  }
+  .lv-nav{ display:flex; gap:8px; align-items:center; }
+  .lv-nav button{
+    font-family:var(--pixel); font-size:8px; padding:8px 12px; cursor:pointer;
+    background:#2a1745; color:#fff; border:2px solid #4a2f70; border-radius:5px;
+  }
+  .lv-nav button:hover:not(:disabled){ border-color:var(--neon); color:var(--neon); }
+  .lv-nav button:disabled{ opacity:.3; cursor:default; }
+  .lv-pag-num{ font-size:8px; color:#9d86c4; }
+  .lv-pontos{ display:flex; gap:4px; flex-wrap:wrap; max-width:220px; }
+  .lv-ponto{ width:7px; height:7px; border-radius:50%; background:#34204f; cursor:pointer; border:none; padding:0; }
+  .lv-ponto.on{ background:var(--neon); }
+
+  .lv-voltar{ margin-top:16px; }
+
+  @media (max-width:600px){
+    .lv-pagina{ padding:18px 16px 8px 20px; }
+    .lv-rodape{ padding:8px 12px; }
+    .lv-pontos{ display:none; }   /* no celular vira poluição — número de página já basta */
+  }
+</style>
+</head>
+<body>
+
+<div class="lv-topo">
+  <h1>📖 LIVRO DO JOGO</h1>
+  <p>Manual do Arena Fighter — mecânicas, elenco e como a ranqueada funciona.</p>
+</div>
+
+<div class="lv-livro" id="lv-livro">
+  <div class="lv-pagina" id="lv-pagina"></div>
+  <div class="lv-rodape">
+    <div class="lv-nav">
+      <button id="lv-btn-prev" onclick="Livro.anterior()">◀ ANTERIOR</button>
+      <span class="lv-pag-num" id="lv-pag-num"></span>
+      <button id="lv-btn-next" onclick="Livro.proxima()">PRÓXIMA ▶</button>
+    </div>
+    <div class="lv-pontos" id="lv-pontos"></div>
+  </div>
+</div>
+
+<a class="btn-big alt2 lv-voltar" href="index.html">VOLTAR PRO JOGO</a>
+
+<script src="js/patchnotes.js?v=49"></script>
+<script>
+/* ============================================================
+   CONTEÚDO DO LIVRO
+   ------------------------------------------------------------
+   Cada página é {titulo, corpo} — corpo é HTML puro. O texto aqui é
+   MANTIDO À MÃO (não lê turndata.js/characters.js ao vivo): sempre que
+   uma mecânica nova entrar no jogo, alguém precisa vir atualizar a
+   página certa aqui. Isso está escrito como regra em CONTEXT.md —
+   procure por "LIVRO DO JOGO" lá se for mexer numa mecânica e não achar
+   onde documentar.
+   ============================================================ */
+const PAGINAS = [
+
+{ titulo:'Capa', corpo:`
+  <div class="lv-capa">
+    <div class="emblema">⚔️</div>
+    <h2>ARENA FIGHTER</h2>
+    <div class="sub">O LIVRO DO JOGO</div>
+    <p class="verso">Um guia completo de como a arena funciona: a batalha 3x3 por turnos,
+    o que cada tipo de dano e cada status faz, quem é cada lutador do elenco e como
+    a ranqueada e o perfil de jogador funcionam. Passe as páginas com os botões
+    embaixo, pelas setas do teclado, ou pulando direto pelo sumário na próxima
+    página.</p>
+  </div>`},
+
+{ titulo:'Sumário', corpo:`
+  <h2>📑 Sumário</h2>
+  <p>Clique num item para pular direto pra página.</p>
+  <div class="lv-sumario" id="lv-sumario-lista"></div>`},
+
+{ titulo:'Como jogar', corpo:`
+  <h2>🎮 Como jogar</h2>
+  <p>A ARENA FIGHTER é um jogo de luta em <b>pixel-art</b> que roda direto no
+  navegador. O modo principal — o único que importa pra ranqueada — é a
+  <b>batalha 3x3 por turnos</b>: você monta um time de três lutadores, o
+  adversário (a IA ou outro jogador) monta o dele, e os dois times se enfrentam
+  revezando turnos até um lado inteiro cair.</p>
+  <p>Você chega até os modos de jogo andando pela <b>vila (hub)</b> — o menu
+  inicial não é uma lista de botões, é um lugarzinho que você anda com
+  <code>◀ ▶</code> e conversa com os personagens de cada ponto. Cada um deles
+  te leva pra uma coisa diferente: montar time offline, jogar online, ver o
+  catálogo de personagens, o ranking, os patch notes.</p>
+  <h3>Os modos</h3>
+  <ul>
+    <li><b>3x3 OFFLINE</b> — você monta os dois times e luta contra a IA do
+    próprio jogo, sem afetar nenhum rating.</li>
+    <li><b>🏕 SOBREVIVÊNCIA</b> — o jogo sorteia o SEU time (você não escolhe)
+    e te bota contra um time inimigo sorteado atrás do outro, sem parar. Você
+    sempre entra de vida cheia em cada rodada nova — só o adversário muda. A
+    corrida acaba quando você perde (ou decide parar), e a MAIOR sequência já
+    alcançada fica salva como recorde no seu perfil — ver a página de Perfil.</li>
+    <li><b>ONLINE · CASUAL</b> — você monta seu time antes de entrar na fila,
+    joga contra outra pessoa de verdade, mas <i>não mexe no rating</i>.</li>
+    <li><b>ONLINE · RANQUEADA</b> — entra na fila SEM time montado; ao parear,
+    os dois jogadores fazem um <b>draft ao vivo</b> (escolha alternada, um
+    personagem nunca pode ser escolhido pelos dois lados). O resultado altera
+    o seu ELO de verdade — ver a página de Ranqueada.</li>
+    <li><b>⚖ CONDENAÇÃO</b> — no Tribunal da Rainha: o mesmo draft da
+    ranqueada (1 banimento de cada lado e escolha alternada), só que contra o
+    <b>bot da rainha Smergula</b>, que estuda com quem você mais joga e mira
+    sem errar alvo à toa. Não vale pontos.</li>
+    <li><b>📖 MODO HISTÓRIA</b> — os capítulos (Tel Aviv, Smergulus Kingdom),
+    com cenas e lutas de times fixos. Tem <b>duas campanhas</b>, cada uma com
+    o próprio progresso: a <b>normal</b> e a <b>⚖ da Condenação</b> — a mesma
+    história reencenada pela rainha do trono dela, com o <b>bot do julgamento</b>
+    (a IA esperta) jogando do outro lado. Sem draft nem banimento: os times
+    são os da história.</li>
+  </ul>
+  <div class="lv-caixa dica">
+    <b>🛡 Defender:</b> passa o turno e ganha <b>+8 de defesa até o seu
+    próximo turno</b> — segura todos os golpes que vierem até lá.
+  </div>`},
+
+{ titulo:'Ordem de turno', corpo:`
+  <h2>⏱ Ordem de turno e velocidade</h2>
+  <p>No começo de cada rodada, todo mundo (dos dois times) é ordenado pela
+  <b>velocidade</b> (o atributo VEL da ficha, mais qualquer bônus/penalidade
+  do momento). Quem for mais rápido age primeiro na rodada.</p>
+  <p>Empate de velocidade é decidido por <b>sorteio a cada rodada</b> — não é
+  sempre o mesmo lado que ganha o desempate, pra não virar vantagem estrutural
+  fixa de um dos times.</p>
+  <div class="lv-caixa dica">
+    <b>Turno extra:</b> quem estiver <b>35% mais rápido que a média</b> de
+    velocidade de todo mundo em campo naquela rodada ganha um <b>segundo
+    turno</b>, no fim da própria rodada. É o que dá propósito de verdade pra
+    apostar em velocidade (e pra passivas como Agilidade Crescente).
+  </div>
+  <p>Alguns efeitos mexem na ordem sem depender de velocidade: um golpe que
+  deixa o alvo <b>ATORDOADO</b> faz ele perder o turno inteiro (sem agir,
+  sem chance de reagir), e a <b>LENTIDÃO</b> reduz a velocidade por um número
+  de turnos, o que pode empurrar alguém pra trás na fila da rodada seguinte.</p>`},
+
+{ titulo:'Dano e defesa', corpo:`
+  <h2>💥 Dano e defesa</h2>
+  <p>Todo golpe tem um <b>dano base</b> (o número fixo da ficha da skill) somado
+  a uma fatia do <b>ataque</b> de quem bateu:</p>
+  <div class="lv-caixa">
+    dano bruto = dano_base&nbsp;+&nbsp;(ataque&nbsp;×&nbsp;0,35)
+  </div>
+  <p>Esse número passa então pela <b>defesa do alvo</b> — mas não como uma
+  subtração fixa. A defesa corta uma <b>porcentagem</b> do dano:</p>
+  <div class="lv-caixa">
+    dano final = dano bruto&nbsp;×&nbsp;100&nbsp;/&nbsp;(100&nbsp;+&nbsp;defesa&nbsp;×&nbsp;4)
+  </div>
+  <p>Cortar por porcentagem (em vez de "dano menos defesa") evita um problema
+  clássico: com subtração fixa, um golpe fraco perde quase tudo contra uma
+  defesa mediana enquanto um golpe forte mal sente — a defesa "apagava" quem
+  bate várias vezes de leve e inflava só os tanques. Por porcentagem, o corte
+  é igual pra golpes de qualquer tamanho.</p>
+  <h3>Os 12 tipos de dano</h3>
+  <div class="lv-grade">
+    <div class="lv-carta"><div class="tit">👊 Físico</div><div class="desc">Dano direto, reduzido pela defesa normalmente.</div></div>
+    <div class="lv-carta"><div class="tit">🔥 Fogo</div><div class="desc">Aplica QUEIMADURA — dano por turno.</div></div>
+    <div class="lv-carta"><div class="tit">☠ Veneno</div><div class="desc">IGNORA a defesa — no acerto direto e no dano por turno.</div></div>
+    <div class="lv-carta"><div class="tit">🩸 Sangramento</div><div class="desc">IGNORA a defesa e o dano por turno CRESCE conforme o alvo perde vida.</div></div>
+    <div class="lv-carta"><div class="tit">⚡ Elétrico</div><div class="desc">Chance de ATORDOAR (perde o turno).</div></div>
+    <div class="lv-carta"><div class="tit">❄ Gelo</div><div class="desc">Aplica LENTIDÃO — reduz a velocidade.</div></div>
+    <div class="lv-carta"><div class="tit">🌋 Terreno</div><div class="desc">Fica no campo ferindo um time inteiro por vários turnos.</div></div>
+    <div class="lv-carta"><div class="tit">🌑 Sombrio</div><div class="desc">DRENA parte do dano como vida pra quem bateu.</div></div>
+    <div class="lv-carta"><div class="tit">✨ Energia</div><div class="desc">PERFURA — a defesa do alvo vale só 25% do normal.</div></div>
+    <div class="lv-carta"><div class="tit">💥 Explosivo</div><div class="desc">Atinge o time inimigo inteiro de uma vez.</div></div>
+    <div class="lv-carta"><div class="tit">💗 Charme</div><div class="desc">Golpes de suporte/cura (Loirinha da CDI).</div></div>
+    <div class="lv-carta"><div class="tit">🕸 Maldito</div><div class="desc">Magia sombria (Smergula) — conta como MAGIA pro Véu Maldito.</div></div>
+  </div>`},
+
+{ titulo:'Status e efeitos', corpo:`
+  <h2>🌀 Status e efeitos</h2>
+  <div class="lv-caixa dica">
+    <b>💨 Esquivou = escapou de tudo.</b> Quem ESQUIVA de um golpe (Instinto
+    da Serrinha, furtividade do Smergulão, Fumaça Colorida…) não leva o dano
+    <b>nem os efeitos</b> que vinham junto: veneno, sangramento, queimadura,
+    lentidão, confusão, atordoar, provocação, selo e o furto de tempo. Golpe
+    de vários acertos: basta UM acerto pegar pro efeito entrar. Golpe que não
+    causa dano (como a Smergulite) não dá pra esquivar.
+  </div>
+  <ul>
+    <li><b>Atordoado</b> — perde o turno inteiro, sem agir e sem poder reagir.</li>
+    <li><b>Confuso</b> — chance de o golpe sair no ALVO ERRADO (sorteado no
+    campo inteiro, aliado ou inimigo).</li>
+    <li><b>Stats roubados</b> — a MÃO LEVE da Prodocimo SEMPRE rouba 4 de
+    ataque e 3 de defesa do alvo por 2 turnos (🔻 no card dele), e ainda
+    leva TODOS os buffs bons que ele tiver (ataque, defesa, velocidade,
+    regeneração — até a guarda do Defender). Lentidão não é buff: fica.</li>
+    <li><b>Esgotado</b> — depois da DESMATERIALIZAÇÃO TOTAL o Dmaterelizador
+    fica um turno sem poder nenhum: todos os golpes travados, só dá pra defender.</li>
+    <li><b>Desmaterializar o campo</b> — o golpe DESMATERIALIZAR apaga o que o
+    time inimigo construiu (Corsa Blindado, Escudo Temporal, Muralha de
+    Lasanha, Fumaça Colorida), os buffs bons dos inimigos e o terreno que
+    estiver ferindo o time dele. O PORTAL ignora provocação e muralha.</li>
+    <li><b>Lentidão</b> — reduz a velocidade por um número de turnos; pode
+    empurrar quem leva pra trás na ordem da próxima rodada.</li>
+    <li><b>Provocado (Taunt)</b> — só consegue atacar quem provocou, por um
+    número fixo de turnos. É a base das builds de tanque: prender o time
+    inimigo em cima de quem aguenta apanhar.</li>
+    <li><b>Selado</b> — o ÚLTIMO golpe usado pelo alvo fica bloqueado por um
+    número de turnos (o Lambança faz isso). Sem golpe anterior, não tem o
+    que selar.</li>
+    <li><b>Ataque removido</b> — diferente de tudo isso: é PERMANENTE, não
+    conta turno nenhum. Apaga o ataque do alvo pro resto da luta inteira
+    (a ultimate do Lambança faz os dois — sela E remove — no mesmo golpe).
+    Buffs de ataque que o alvo ganhar DEPOIS ainda funcionam normal.</li>
+    <li><b>Recarga roubada</b> — o Marcelão Black JW mexe direto na RECARGA
+    das skills, não em vida nem em status: uma skill do ALVO que já estiver
+    recarregando ATRASA (ganha turnos), e uma skill DELE que já estiver
+    recarregando ADIANTA (perde turnos) — o tempo sai de um lado e vai pro
+    outro. Só afeta quem já estava esperando a própria skill voltar — uma
+    skill livre não tem recarga pra roubar.</li>
+    <li><b>Queimadura / Veneno / Sangramento</b> — dano no FIM do turno de
+    quem está com o efeito, todo turno, até o contador zerar. O veneno usa
+    sempre o MESMO número fixo, não importa quem aplicou (pra duas picadas
+    iguais doerem igual). O sangramento é o único que CRESCE — quanto menos
+    vida o alvo tem, mais ele dói. Repetir o MESMO golpe no mesmo alvo
+    RENOVA o efeito (volta a contar do começo), não empilha outro por cima;
+    efeitos de atacantes diferentes somam.</li>
+    <li><b>Buffs/Debuffs</b> — força (+ataque), blindagem (+defesa), agilidade
+    (+velocidade); alguns crescem POR TURNO em vez de aplicar tudo de uma vez.</li>
+    <li><b>Golpe de "1 aliado"</b> (Beijo Curativo, Lasanha Quentinha, Abraço
+    Curativo, Purificação) vai sempre num <b>companheiro</b> — nunca em quem
+    usou. Sem companheiro de pé, o golpe fica travado. Vale igual pra você e
+    pro bot.</li>
+    <li><b>Estruturas e Terrenos</b> — um objeto (ex.: o Corsa Blindado do Fat
+    Mango, ou o Escudo Temporal do Marcelão Black JW) que fica no campo
+    protegendo — ou acelerando a recarga — de um time inteiro por alguns
+    turnos; terreno é o oposto, fica ferindo um time inteiro.</li>
+    <li><b>Ambiente</b> — diferente de terreno/estrutura: pega os DOIS times
+    ao mesmo tempo (clima da arena), normalmente amplificando cura ou magia
+    — ou, na TEMPESTADE DE GELO do Marcelão Black JW, travando a velocidade
+    de todo mundo no mesmo número e atrasando toda recarga usada por
+    qualquer um enquanto durar.</li>
+  </ul>
+  <div class="lv-caixa aviso">
+    Todo efeito por turno (queimadura, veneno, sangramento, buffs que crescem)
+    é resolvido no fim do turno de quem está com ele — a ordem importa: quem
+    age primeiro na rodada sofre o tick primeiro também.
+  </div>`},
+
+{ titulo:'Passivas', corpo:`
+  <h2>🧬 Passivas</h2>
+  <p>Cada personagem tem UMA passiva própria, sempre ativa, sem precisar
+  escolher — é a identidade dele em campo:</p>
+  <div class="lv-grade">
+    <div class="lv-carta"><div class="tit">🛡 Fortaleza</div><div class="desc">-25% de dano recebido. Imune a Lentidão.</div></div>
+    <div class="lv-carta"><div class="tit">💨 Agilidade Crescente</div><div class="desc">+12% de velocidade a cada turno, acumulando.</div></div>
+    <div class="lv-carta"><div class="tit">🐾 Instinto Selvagem</div><div class="desc">+6% de esquiva por turno (até 30%). Esquivar contra-ataca.</div></div>
+    <div class="lv-carta"><div class="tit">🥖 Padaria Ambulante</div><div class="desc">Cura 3 nela e 1 em cada aliado, todo fim de turno.</div></div>
+    <div class="lv-carta"><div class="tit">👻 Sugadora de Almas</div><div class="desc">Rouba almas a cada golpe; ao juntar o suficiente, transforma.</div></div>
+    <div class="lv-carta"><div class="tit">💋 Carisma</div><div class="desc">45% de toda cura feita em outro aliado volta pra ela.</div></div>
+    <div class="lv-carta"><div class="tit">🦾 Protocolo Ciborgue</div><div class="desc">Perde vida → transforma e fica MAIS forte, com golpes novos.</div></div>
+    <div class="lv-carta"><div class="tit">✝ Fé Inabalável</div><div class="desc">-15% de dano recebido. Imune a Confusão.</div></div>
+    <div class="lv-carta"><div class="tit">🛋 Estofado</div><div class="desc">-10% de dano recebido, +3 defesa por turno (até +18).</div></div>
+    <div class="lv-carta"><div class="tit">🥋 Fúria de Nunchaco</div><div class="desc">18% de chance de ATORDOAR em QUALQUER golpe que acerte.</div></div>
+    <div class="lv-carta"><div class="tit">⏱ Ladrão de Tempo</div><div class="desc">35% de chance, todo fim de turno, de adiantar 1 turno de recarga de uma skill sua.</div></div>
+    <div class="lv-carta"><div class="tit">⚡ Condutor</div><div class="desc">8% de chance de ATORDOAR em QUALQUER golpe que acerte.</div></div>
+    <div class="lv-carta"><div class="tit">💧 Reservatório</div><div class="desc">Luta com a água que carrega (100). Tanque cheio bate ×1,6, seco ×0,6. Todo golpe gasta água.</div></div>
+    <div class="lv-carta"><div class="tit">🪱 Maldição do Verme</div><div class="desc">Caiu e a partida não acabou? Volta na rodada SEGUINTE como VERME: só 65 de vida, golpes de veneno. Uma vez por partida.</div></div>
+    <div class="lv-carta"><div class="tit">🌀 Desintegração</div><div class="desc">Todo golpe que pega tira 1 de defesa do alvo PRA SEMPRE (até −6 por inimigo).</div></div>
+    <div class="lv-carta"><div class="tit">🃏 Cara de Pau</div><div class="desc">+10% de esquiva. Quem ERRA um golpe nela fica CONFUSO no próximo turno.</div></div>
+  </div>
+  <div class="lv-caixa dica">
+    Passivas de transformação (Sugadora de Almas, Protocolo Ciborgue) trocam os
+    QUATRO golpes normais por versões mais fortes quando o gatilho acontece —
+    não é só um número maior, o kit inteiro muda.
+  </div>`},
+
+{ titulo:'Elenco I', corpo:`
+  <h2>🥊 Elenco — parte 1 de 2</h2>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Fat Smerg</span><span class="titulo">O Peso Pesado</span><span class="raca">Smergulus</span></div>
+    <div class="stats">HP 168 · ATK 20 · DEF 13 · VEL 7 · Fortaleza</div>
+    <div class="texto">O tanque original: provoca um inimigo por vez, aguenta com a Fortaleza,
+    engrossa a própria defesa com a Postura de Rocha e devolve tudo isso como dano no COLAPSO
+    (que escala com a defesa DELE).</div>
+  </div>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Strong Smerg</span><span class="titulo">Punho de Ferro</span><span class="raca">Smergulus</span></div>
+    <div class="stats">HP 183 · ATK 27 · DEF 11 · VEL 12 · Agilidade Crescente</div>
+    <div class="texto">DPS de velocidade: fica mais rápido a cada turno até quase garantir o
+    turno extra da rodada. O maior ataque base do jogo.</div>
+  </div>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Serrinha Dog</span><span class="titulo">O Vira-Lata Furioso</span><span class="raca">Smergulus</span></div>
+    <div class="stats">HP 181 · ATK 20 · DEF 11 · VEL 13 · Instinto Selvagem</div>
+    <div class="texto">O mais rápido do elenco. Mistura sangramento e veneno com uma chance de
+    esquiva que cresce turno a turno — e cada esquiva vem com contra-ataque.</div>
+  </div>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Fat Mango</span><span class="titulo">O Padeiro Blindado</span><span class="raca">Limeirense</span></div>
+    <div class="stats">HP 166 · ATK 21 · DEF 12 · VEL 8 · Padaria Ambulante</div>
+    <div class="texto">Suporte: cura o time inteiro todo turno (mais ele mesmo) e pode estacionar
+    o Corsa Blindado em campo — uma estrutura que dá defesa extra pro time inteiro.</div>
+  </div>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Mecas</span><span class="titulo">Projeto 5000Z</span><span class="raca">Autômato</span></div>
+    <div class="stats">HP 169 · ATK 24 · DEF 11 · VEL 10 · Protocolo Ciborgue</div>
+    <div class="texto">Quanto mais apanha, mais forte fica: em 50% de vida vira QUASE-CIBORGUE
+    e em 30% vira CIBORGUE 5000Z, trocando os quatro golpes por versões mais fortes a cada forma.</div>
+  </div>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Loirinha da CDI</span><span class="titulo">Charme Fatal</span><span class="raca">Meio-Anjo</span></div>
+    <div class="stats">HP 177 · ATK 20 · DEF 11 · VEL 12 · Carisma</div>
+    <div class="texto">A curandeira do elenco: cura um aliado por vez e devolve parte da cura
+    pra ela mesma. A ultimate cria um AMBIENTE de charme que beneficia o time inteiro.</div>
+  </div>`},
+
+{ titulo:'Elenco II', corpo:`
+  <h2>🥊 Elenco — parte 2 de 2</h2>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Smergula</span><span class="titulo">A Sugadora de Almas</span><span class="raca">Meio-Demônio</span></div>
+    <div class="stats">HP 167 · ATK 22 · DEF 9 · VEL 11 · Sugadora de Almas</div>
+    <div class="texto">Rouba vida em todo golpe e acumula ALMAS; ao encher a barra vira
+    SMERGULA DEMÔNIO, trocando o kit inteiro por versões que drenam ainda mais.</div>
+  </div>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Mameluco</span><span class="titulo">O Dono do Astra</span><span class="raca">Limeirense</span></div>
+    <div class="stats">HP 179 · ATK 17 · DEF 17 · VEL 6 · Fortaleza</div>
+    <div class="texto">Tanque de suporte: a Provocação Geral prende o TIME INIMIGO INTEIRO nele
+    de uma vez (não só um alvo, como o Fat Smerg) e ele ainda acelera os aliados com o Astra.</div>
+  </div>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Lambança</span><span class="titulo">A Bênção Desajeitada</span><span class="raca">Limeirense</span></div>
+    <div class="stats">HP 173 · ATK 22 · DEF 14 · VEL 12 · Fé Inabalável</div>
+    <div class="texto">Suporte de energia: sem cura nenhuma no kit, mas sobrevive apanhando
+    15% menos. A ultimate SELO DO SILÊNCIO sela o último golpe usado pelo alvo por 3
+    turnos E apaga o ATAQUE dele PRA SEMPRE, pro resto da luta.</div>
+  </div>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Adulto Feliz</span><span class="titulo">A Alegria Blindada</span><span class="raca">Humano</span></div>
+    <div class="stats">HP 205 · ATK 21 · DEF 15 · VEL 8 · Estofado</div>
+    <div class="texto">A maior vida do jogo. O dano dele vem do TAMANHO dele (vida MÁXIMA), não
+    do ataque — quanto maior ele for, mais peso ele joga no braço, sem punir dobrado
+    quem já está sofrendo o trabalho de tanque.</div>
+  </div>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Fat Girl</span><span class="titulo">Fúria de Nunchaco</span><span class="raca">Humano</span></div>
+    <div class="stats">HP 151 · ATK 23 · DEF 8 · VEL 12 · Fúria de Nunchaco</div>
+    <div class="texto">O canhão de vidro do elenco: a menor vida e a menor defesa do jogo, em
+    troca dos maiores golpes por alvo único. A MEDITAÇÃO BRANCA é uma POSTURA — ela
+    nunca perde turno, e cada vez que medita o ataque atual DOBRA (até um teto), mas
+    ela fica parada apanhando enquanto isso. Só sai da postura quando ataca de novo.</div>
+  </div>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Marcelão Black JW</span><span class="titulo">O Ladrão de Tempo</span><span class="raca">Humano</span></div>
+    <div class="stats">HP 182 · ATK 22 · DEF 18 · VEL 14 · Ladrão de Tempo</div>
+    <div class="texto">Kit de RECARGA, não de dano bruto: a Moeda Fatal recocheteia sozinha pelo
+    time inimigo (um alvo novo a cada quique, 60% de chance de continuar), o Furto de Tempo
+    atrasa a recarga do alvo enquanto adianta a dele, e o Escudo Temporal adianta a recarga
+    do time inteiro (menos a ultimate de cada um) a cada rodada — sem dar defesa nenhuma,
+    de propósito: isso já é a praia do Corsa Blindado do Fat Mango.
+    A ultimate TEMPESTADE DE GELO congela a arena: todo mundo em campo, dos DOIS times,
+    trava na mesma velocidade, e toda recarga usada por qualquer um demora mais. A passiva
+    também rouba um pouco de tempo de graça todo turno.</div>
+  </div>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Cargas</span><span class="titulo">Sobrecarga</span><span class="raca">Humano</span></div>
+    <div class="stats">HP 162 · ATK 18 · DEF 9 · VEL 14 · Condutor</div>
+    <div class="texto">O mais RÁPIDO do jogo — quase sempre age primeiro. Dano médio; a graça é a
+    chance de ATORDOAR espalhada pelo kit inteiro. A ultimate TEMPESTADE ENCURRALADA acerta o
+    time inimigo e deixa um CAMPO ELÉTRICO por 2 turnos, que fere todo mundo de lá com um dano
+    calculado pela VELOCIDADE dele na hora em que lançou.</div>
+  </div>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Careca</span><span class="titulo">O Amigo Amaldiçoado</span><span class="raca">Humano</span></div>
+    <div class="stats">HP 170 · ATK 21 · DEF 9 · VEL 10 · Maldição do Verme</div>
+    <div class="texto">Um kamikaze de esfregão: quase todo golpe dele COBRA A PRÓPRIA VIDA e cada
+    ponto pago vira dano. A ESFREGADA RAIVOSA paga um pouco de vida a cada uso; a ESTOCADA DO CABO é o
+    único golpe que não cobra nada; o CHÃO ENSABOADO deixa o time inimigo mais lento; e a PANCADA
+    KAMIKAZE troca um terço da vida que ele TEM AGORA por uma pancada enorme. Pagar com a vida PODE
+    matar ele — e é justamente isso que ele quer: quando cai, VOLTA na rodada seguinte como VERME,
+    com os golpes de veneno. A ultimate ENTREGA À MALDIÇÃO gasta TODA a vida num estouro no time
+    inimigo inteiro e derruba ele na hora, pra voltar verme. O ataque base do verme é a TOCA: ele se
+    enfia na terra e passa 1 turno lá embaixo, onde NINGUÉM consegue acertar ele (nem golpe de área);
+    no turno seguinte sai sozinho embaixo do alvo, com dano e veneno. No verme, a ultimate vira o VÉU
+    MALDITO, que deixa todo veneno mais forte e mais longo. A maldição só funciona uma vez por partida:
+    o verme, se cair, não volta.</div>
+  </div>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Tupas</span><span class="titulo">O Mestre das Águas</span><span class="raca">Humano</span></div>
+    <div class="stats">HP 175 · ATK 21 · DEF 10 · VEL 11 · Reservatório</div>
+    <div class="texto">Domina a água — e não sabe nadar. Tem uma barra de ÁGUA (começa cheia, 100):
+    quanto mais cheia, mais forte o golpe, e todo golpe gasta um pouco. A CORRENTEZA devolve +45 de
+    água, mas só funciona com o tanque pela METADE ou menos. A ultimate, REDEMOINHO, é ATIVA: acerta
+    um inimigo e fica em campo, pulando para o próximo inimigo no fim de cada turno do Tupas (um de
+    cada vez), gastando água a cada acerto. Acaba quando a água não paga mais o turno, quando o Tupas
+    cai, ou quando você aperta DESATIVAR — e desativar NÃO gasta o seu turno.</div>
+  </div>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Mano Coxinha</span><span class="titulo">O Salgado de Limeira</span><span class="raca">Humano</span></div>
+    <div class="stats">HP 186 · ATK 21 · DEF 13 · VEL 10 · Cardápio de Limeira</div>
+    <div class="texto">É de Limeira, mas é humano — só gosta tanto de coxinha que ficou com o formato
+    dela. Começa a luta no modo COXINHA (defesa: +6 de defesa e recebe 20% menos dano). A ultimate é UMA
+    só, mas GIRA: cada vez que você usa, ele come a próxima comida da roda e muda de modo — 🍗 coxinha →
+    🍕 PIZZA (velocidade: +6 de velocidade e +15% de esquiva) → 🍔 HAMBÚRGUER (ataque: +25% de dano) →
+    coxinha de novo, e assim vai. Toda comida cura 30, e a ult recarrega em 2 turnos. Os TRÊS golpes
+    MUDAM com o modo (Casca Crocante / Rodízio de Tapas / CRUNCH!; Muralha de Massa — que provoca —
+    / Entrega Relâmpago / Arroto de Cheddar; e Óleo Quente / Fatia Voadora / Voadora de Hambúrguer), e até o jeito de ele ficar parado e andar muda.</div>
+  </div>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Prodocimo</span><span class="titulo">A Enganadora</span><span class="raca">Smergulus</span></div>
+    <div class="stats">HP 165 · ATK 20 · DEF 11 · VEL 12 · Cara de Pau</div>
+    <div class="texto">Nasceu Smergulus e mora em Limeira desde pequena. A única que já enganou a rainha
+    Smergula. Não é a mais forte de ninguém — é a que mais dá RAIVA de enfrentar. A FINTA finge o soco
+    e acerta o chute (×1,5 em quem estiver confuso); a MÃO LEVE rouba ataque e defesa do alvo (e os buffs dele); a FOFOCA deixa o time inimigo
+    confuso por 1 turno. E quem erra nela fica confuso também (Cara de Pau). A ultimate, APERTO DE MÃO
+    REVELADOR, deixa um inimigo CONFUSO por 6 turnos — sem dano, então não dá pra esquivar.</div>
+  </div>
+  <div class="lv-ficha">
+    <div class="cabecalho"><span class="nome">Dmaterelizador</span><span class="titulo">O Fã Número 1 da CDI</span><span class="raca">Humano</span></div>
+    <div class="stats">HP 168 · ATK 21 · DEF 10 · VEL 11 · Desintegração</div>
+    <div class="texto">Um dos maiores fãs da CDI, a entidade de Limeira que nasceu boa e se renegou no crime —
+    e ninguém gosta dele, nem a CDI. Desmaterializa as coisas: cada golpe dele tira defesa do alvo pra
+    sempre, o PORTAL ignora provocação e muralha, o DESMATERIALIZAR apaga estruturas, muralha, fumaça e
+    buffs do time inimigo. A ultimate,
+    DESMATERIALIZAÇÃO TOTAL, é um raio de dano enorme — mas depois ele passa um turno inteiro sem poder.</div>
+  </div>
+  <div class="lv-caixa dica">
+    Este elenco cresce — sempre que um personagem novo entrar (ou um já existente
+    ganhar uma mecânica nova), esta página precisa ser atualizada.
+  </div>`},
+
+{ titulo:'Ranqueada e ELO', corpo:`
+  <h2>🏆 Ranqueada e ELO</h2>
+  <p>A ranqueada usa o mesmo motor da batalha 3x3 — a diferença é que o time
+  inimigo é <b>outro jogador de verdade</b>, você entra na fila sem time
+  montado e escolhe pelo <b>draft ao vivo</b> (escolha alternada; ninguém pode
+  escolher um personagem que o outro já escolheu).</p>
+  <p>O rating usa o sistema <b>ELO</b> clássico: cada vitória/derrota ajusta
+  seus pontos com base na diferença de força entre você e o adversário —
+  vencer alguém muito mais forte rende mais pontos do que vencer alguém muito
+  mais fraco.</p>
+  <h3>Patentes (a escada)</h3>
+  <p>Cada patente tem <b>4 divisões</b> de 60 pontos (240 pontos por patente
+  inteira), seguindo a mitologia do próprio elenco — todo mundo começa igual
+  um vira-lata de rua e vai virando cada vez menos "gente normal" até virar
+  lenda:</p>
+  <ul>
+    <li>🐕 Vira-Lata</li><li>🐾 Serrinha</li><li>👊 Smerg</li>
+    <li>🥖 Padeiro de Elite</li><li>🦾 Quase-Ciborgue</li><li>👼 Meio-Anjo</li>
+    <li>😈 Meio-Demônio</li><li>⚡ Titã</li><li>🔥 Lenda Viva</li>
+    <li>👑 Smerg Supremo <i>(patente única, sem divisão — o topo)</i></li>
+  </ul>
+  <h3>👁 Assistir ao vivo (modo espectador)</h3>
+  <p>Qualquer um — mesmo <b>sem conta</b> — pode assistir às ranqueadas que
+  estão acontecendo agora: <b>Online → 👁 Assistir ao vivo</b> (ou pergunte à
+  Loirinha no Portão da Arena). A lista mostra quem está jogando, a patente de
+  cada um, os times e em que rodada a partida está, e se atualiza sozinha.</p>
+  <p>Assistindo, você vê o <b>draft ao vivo</b> (banimentos e escolhas) e
+  depois a batalha inteira, golpe a golpe, na mesma tela de quem joga. O time
+  do <b>anfitrião fica embaixo</b> e o do convidado em cima. Quem assiste não
+  interfere em nada: não dá pra escolher golpe nem atrasar a partida.</p>
+  <div class="lv-caixa aviso">
+    O resultado da partida é enviado pelo próprio navegador — um jogador
+    mal-intencionado consegue, em teoria, forjar uma vitória. Pra ranqueada
+    "de verdade" (competitiva), a validação precisaria rodar no servidor
+    (Cloud Functions). Hoje, as regras do banco impedem mexer no rating DE
+    OUTRO jogador e travam saltos absurdos numa partida só (±60 pontos).
+  </div>`},
+
+{ titulo:'Perfil do jogador', corpo:`
+  <h2>👤 Perfil do jogador</h2>
+  <p>Cada jogador pode escolher uma <b>foto de perfil</b> — não é upload de
+  imagem nenhuma, é o <b>rosto de um personagem do elenco</b>, recortado
+  automaticamente a partir da própria sprite dele.</p>
+  <p>Clicando em <b>qualquer linha do ranking</b> abre o perfil público de
+  quem foi clicado (o seu ou o de outra pessoa — é a mesma tela). Lá aparece:</p>
+  <ul>
+    <li><b>Elo atual</b> — o rating de agora, sobe e desce com vitória/derrota.</li>
+    <li><b>Maior elo</b> — o pico mais alto que o jogador já alcançou. Esse
+    número só SOBE, nunca volta pra trás quando o rating cai.</li>
+    <li><b>Winrate na ranqueada</b> — vitórias sobre o total de partidas
+    decididas.</li>
+    <li><b>Personagem favorito</b> — o mais usado nas partidas ONLINE (conta
+    quantas vezes cada personagem apareceu nos times daquele jogador).</li>
+    <li><b>🏕 Recorde na sobrevivência</b> — a maior sequência de times
+    derrubados seguidos no Modo Sobrevivência. Assim como o maior elo, esse
+    número só SOBE — uma corrida ruim nunca apaga o seu melhor resultado.</li>
+  </ul>
+  <div class="lv-caixa dica">
+    <b>🎽 Skins.</b> Algumas vitórias na ranqueada destravam SKINS — folhas
+    alternativas puramente visuais pros personagens (não mudam stat, golpe
+    nem passiva nenhuma). A primeira é a <b>Skin Honesta</b> do Fat Smerg,
+    liberada em <b>10 vitórias ranqueadas</b>. Quando você desbloqueia uma,
+    um aviso aparece na hora. Pra ESCOLHER qual skin usar, vá no
+    <b>CATÁLOGO</b> (o Mecas, no Laboratório 5000Z): selecione o
+    personagem e escolha entre as skins já liberadas. Ela aparece na
+    MONTAGEM DE TIME e na própria BATALHA (offline e online) — só no
+    <b>DRAFT</b> da ranqueada que todo mundo aparece com a folha padrão,
+    de propósito, pra não misturar cosmético com a escolha ao vivo.
+  </div>
+  <p>Quem está vendo o PRÓPRIO perfil também vê o botão <b>TROCAR FOTO</b>,
+  que abre uma grade com o rosto de todo o elenco pra escolher.</p>`},
+
+{ titulo:'Modo História', corpo:`
+  <h2>🗺 Modo História — o mundo aberto</h2>
+  <p>O botão <b>📖 HISTÓRIA</b> não abre mais uma lista de fases: ele te
+  coloca DENTRO do mundo, visto de cima, no último lugar onde você salvou.
+  Você anda com o personagem, fala com as pessoas, pega missões e encontra
+  as lutas pelo caminho. As lutas continuam sendo o 3x3 por turnos de sempre.</p>
+  <ul>
+    <li><b>Andar:</b> setas ou WASD (Shift corre). No celular, encoste o dedo
+    na metade ESQUERDA da tela e arraste: o joystick nasce onde você tocou.
+    Empurrar até o fim também corre.</li>
+    <li><b>Falar / mexer em algo:</b> E, Espaço ou Enter. No celular, o botão
+    redondo Ⓐ, que acende quando tem alguém ou alguma coisa perto.</li>
+    <li><b>📜 Diário (J)</b>, <b>🗺 Mapa (M)</b>, <b>☰ Menu (Esc)</b>, e Tab
+    esconde o minimapa.</li>
+    <li><b>START (P)</b>: escolhe QUEM do grupo você controla. Cada personagem
+    anda num ritmo diferente — o <b>Cargas</b> é o mais rápido (é um raio), o
+    Serrinha corre bem, o Fat Mango vai devagar.</li>
+  </ul>
+  <h3>Carros</h3>
+  <p>Quando a história libera, dá pra dirigir o <b>Astra</b> (prata, mais
+  rápido) e o <b>Corsa</b> (vermelho, um pouco mais lento). Ande até o carro e
+  aperte <b>E</b> (ou Ⓐ) pra entrar; de novo pra descer. Carro <b>só anda na
+  rua</b>: asfalto, calçamento das praças e estrada de terra. Ele atravessa de
+  uma região pra outra e fica estacionado onde você desceu.</p>
+  <h3>Itens e quebra-cabeças</h3>
+  <p>Nem toda missão é luta. Algumas pedem pra <b>achar uma chave ou uma
+  peça</b> (o que você carrega aparece na aba <b>🎒 Itens</b> do Diário),
+  outras são <b>quebra-cabeças</b>: um cadeado de números, engrenagens pra
+  alinhar, rodas de relógio, pêndulos, alavancas ou pesos que precisam ser
+  acionados <b>na ordem certa</b>. A dica quase sempre está escrita em algum
+  lugar perto — uma placa, um esquema, um bilhete. Errou a ordem? Ela volta
+  pro começo, sem castigo.</p>
+  <h3>Capítulos</h3>
+  <p><b>Capítulo 1 — Tel Aviv, "03:33"</b>: o Mecas acorda no laboratório e
+  atravessa a cidade parada até o topo da Torre do Relógio.
+  <b>Capítulo 2 — Smergulus Kingdom, "A Coroa que Suga"</b>: o reino da rainha
+  contado por quem é de lá — em cada ato você controla outro personagem (o
+  grupo do Mecas fica guardado e volta no último ato, chegando pelas
+  <b>Estradas do Mundo</b>).</p>
+  <h3>Casas e construções</h3>
+  <p><b>Dá pra entrar em quase tudo</b>: casas, lojas, prédios, galpões, o
+  hotel, a padaria, a taverna, os templos. É só andar até a <b>porta</b> e
+  continuar andando; pra sair, ande pela porta de baixo da sala. Lá dentro
+  tem móveis, gente presa no minuto 03:33 pra conversar e coisas pra
+  <b>🔍 ver</b> (a TV, a geladeira, o relógio de parede…). Os poucos lugares
+  trancados — como a Torre do Relógio, o ferro-velho ou o castelo da rainha —
+  são trancas da própria história: eles abrem quando chegar a hora.</p>
+  <h3>Missões</h3>
+  <p><b>Principais</b> contam a história e começam sozinhas. <b>Secundárias</b>
+  são oferecidas por quem tem um <b>!</b> em cima da cabeça; um <b>?</b> quer
+  dizer que aquela pessoa é o próximo passo de alguma missão sua. No Diário
+  você <b>MARCA</b> uma missão pra seguir: ela ganha uma <b>seta</b> na borda
+  da tela com a distância, um <b>◆</b> no chão e um ponto no minimapa e no
+  mapa do mundo. Objetivo em outro lugar? A seta aponta pra porta ou saída certa.</p>
+  <h3>Grupo e lutas</h3>
+  <p>Quem entra no grupo passa a andar <b>atrás de você em fila</b>. Nas lutas,
+  o seu time é você + quem está te seguindo (até 3), a não ser que a história
+  diga outra coisa. Inimigos andam pelo mapa: se um deles te <b>VÊ</b>, aparece
+  um <b>!</b> vermelho e ele vem correndo. Encostou, é luta.</p>
+  <div class="lv-caixa dica">
+    <b>Ganhou</b>, você volta pro mesmo ponto do mapa. <b>Perdeu</b>, você
+    acorda no último ponto salvo — nada da história se perde. O jogo salva
+    sozinho ao trocar de área, ao terminar missão e de tempos em tempos; um
+    🕯 lampião salva na hora. Missão concluída pode dar <b>❤ bônus de
+    história</b>: vida a mais pro grupo inteiro em todas as lutas da história.
+  </div>
+  <div class="lv-caixa">
+    <b>As lutas da história não perdoam.</b> Os inimigos jogam com a mesma
+    IA esperta da ⚖ Condenação — miram em quem está mais fraco, curam na hora
+    certa e escolhem o golpe que rende mais. Patrulha de rua ainda é
+    tranquila, mas rival e chefe exigem pensar: guardar a ultimate pro momento
+    certo, defender quando o chefe vai bater forte e derrubar primeiro quem
+    cura ou quem dá turno extra. Perdeu? Volta do último ponto salvo e tenta
+    de novo, sem perder nada.
+  </div>
+  <h3>Arquivo e coleção</h3>
+  <p>O <b>📚 Arquivo</b> (no menu) guarda o que você descobriu: gente, lore,
+  bestiário, os colecionáveis escondidos (relógios parados, cartazes,
+  protótipos…) e o <b>⚔ Rejogar</b>, pra revanche contra chefe já vencido.
+  Ninguém despeja a história numa parede de texto: ela está em placas,
+  terminais, conversas opcionais e cantos do mapa.</p>
+  <p>A <b>⚖ Condenação</b> (a história sob julgamento da rainha) continua em
+  lista de fases, pelo Tribunal da vila ou pelo menu ☰ do mundo.</p>`},
+
+{ titulo:'Créditos', corpo:`
+  <h2>🎬 Créditos e versão</h2>
+  <p>A ARENA FIGHTER é feita 100% em <b>HTML + CSS + JavaScript puro</b>,
+  sem build e sem framework — cada arquivo <code>js/*.js</code> cuida de UMA
+  responsabilidade (dados, motor de batalha, interface, rede, etc).</p>
+  <p>Versão atual do jogo: <b id="lv-versao">—</b>. O histórico completo de
+  toda mudança — o que foi ajustado, balanceado e por quê — mora nos
+  <b>PATCH NOTES</b>, dentro do próprio jogo.</p>
+  <div class="lv-caixa dica">
+    Este livro é mantido À MÃO: sempre que uma mecânica nova entra no jogo
+    (uma passiva, um tipo de dano, um jeito novo de calcular alguma coisa,
+    um sistema inteiro como o de perfil), a página certa aqui precisa ser
+    atualizada junto — é uma regra escrita em <code>CONTEXT.md</code>.
+  </div>
+  <p>O mundo do <b>Modo História</b> usa pacotes de pixel art do
+  <b>Liberated Pixel Cup (LPC)</b> e do OpenGameArt.org (terreno, construções,
+  árvores, interiores, fogo, ruínas e cidade). Os autores e as licenças de cada
+  pacote estão na tela <b>✍ CRÉDITOS</b>, no menu ☰ do próprio Modo História.</p>
+  <p style="margin-top:20px; text-align:center; color:#8a72b5">— fim do livro —</p>`}
+
+];
+
+/* ============ MOTOR DE PÁGINAS (virar, sumário, atalhos) ============ */
+const Livro = (function(){
+  let idx = 0;
+
+  function montarSumario(){
+    const box = document.getElementById('lv-sumario-lista');
+    if(!box) return;
+    box.innerHTML = PAGINAS.map((p,i)=>
+      `<button onclick="Livro.irPara(${i})"><span>${String(i+1).padStart(2,'0')}</span> ${p.titulo}</button>`
+    ).join('');
+  }
+
+  function render(){
+    idx = Math.max(0, Math.min(PAGINAS.length-1, idx));
+    const pag = PAGINAS[idx];
+    document.getElementById('lv-pagina').innerHTML = pag.corpo;
+    document.getElementById('lv-pag-num').textContent = (idx+1)+' / '+PAGINAS.length;
+    document.getElementById('lv-btn-prev').disabled = idx===0;
+    document.getElementById('lv-btn-next').disabled = idx===PAGINAS.length-1;
+    montarPontos();
+    if(idx===1) montarSumario();
+    if(idx===PAGINAS.length-1 && typeof PatchNotes!=='undefined'){
+      const v=document.getElementById('lv-versao'); if(v) v.textContent = PatchNotes.VERSAO_ATUAL || '—';
+    }
+    document.getElementById('lv-livro').scrollTop = 0;
+    document.getElementById('lv-pagina').scrollTop = 0;
+  }
+
+  function montarPontos(){
+    const box=document.getElementById('lv-pontos'); if(!box) return;
+    box.innerHTML = PAGINAS.map((_,i)=>
+      `<button class="lv-ponto${i===idx?' on':''}" title="${PAGINAS[i].titulo}" onclick="Livro.irPara(${i})"></button>`
+    ).join('');
+  }
+
+  function proxima(){ if(idx<PAGINAS.length-1){ idx++; render(); } }
+  function anterior(){ if(idx>0){ idx--; render(); } }
+  function irPara(i){ idx=i; render(); }
+
+  document.addEventListener('keydown', e=>{
+    if(e.key==='ArrowRight') proxima();
+    else if(e.key==='ArrowLeft') anterior();
+  });
+
+  render();
+  return { proxima, anterior, irPara };
+})();
+</script>
+</body>
+</html>

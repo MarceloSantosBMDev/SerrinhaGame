@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Debug de Spritesheet</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .dbg{ height:100vh; overflow:auto; padding:18px; }
+  .dbg h2{ font-size:13px; color:var(--cyan); margin:14px 0 8px; }
+  .dbg pre{ font-size:9px; color:#9d86c4; background:#120824; padding:10px; border-radius:6px; line-height:1.6; white-space:pre-wrap; }
+  .dbg canvas{ background:#1a0e2e; border:2px solid #34204f; border-radius:6px; max-width:100%; }
+</style>
+</head>
+<body>
+<div class="dbg">
+  <h1 class="title" style="font-size:20px">DEBUG SPRITESHEET</h1>
+  <p class="muted">Mostra os frames detectados automaticamente em cada imagem.</p>
+
+  <h2>FAT SMERG — assets/fat_smerg/fat_smerg.png</h2>
+  <pre id="info1">carregando...</pre>
+  <canvas id="cv1"></canvas>
+
+  <h2>STRONG SMERG — assets/strong_smerg/strong_smerg.png</h2>
+  <pre id="info2">carregando...</pre>
+  <canvas id="cv2"></canvas>
+
+  <h2>SERRINHA DOG — assets/serrinha/serrinha_dog.png</h2>
+  <pre id="info3">carregando...</pre>
+  <canvas id="cv3"></canvas>
+
+  <h2>FAT MANGO — assets/fat_mango/fat_mango.png</h2>
+  <pre id="info4">carregando...</pre>
+  <canvas id="cv4"></canvas>
+
+  <h2>MECAS NORMAL — assets/mecas/mecasnormal.png</h2>
+  <pre id="info5">carregando...</pre>
+  <canvas id="cv5"></canvas>
+
+  <h2>MECAS QUASE-CIBORGUE — assets/mecas/mecasqserobo.png</h2>
+  <pre id="info6">carregando...</pre>
+  <canvas id="cv6"></canvas>
+
+  <h2>MECAS CIBORGUE — assets/mecas/projeto_mecas_5000z.png</h2>
+  <pre id="info7">carregando...</pre>
+  <canvas id="cv7"></canvas>
+
+  <h2>LOIRINHA DA CDI — assets/loirinha_cdi/lorinhadacdi.png</h2>
+  <pre id="info8">carregando...</pre>
+  <canvas id="cv8"></canvas>
+
+  <h2>SMERGULA (humana) — assets/smergula/smergula3.png</h2>
+  <pre id="info9">carregando...</pre>
+  <canvas id="cv9"></canvas>
+
+  <h2>SMERGULA DEMÔNIO — assets/smergula/smergula2.png
+    <br><small style="font-size:8px;color:#ff8a8a">faixas 4 e 5 têm os RÓTULOS de texto colados nos quadros — não usar</small></h2>
+  <pre id="info10">carregando...</pre>
+  <canvas id="cv10"></canvas>
+
+  <h2>MATHEUS LIMEIRA (folha 1) — assets/matheus_limeira/matheuslimeira.png</h2>
+  <pre id="info11">carregando...</pre>
+  <canvas id="cv11"></canvas>
+
+  <h2>MATHEUS LIMEIRA (folha 2) — assets/matheus_limeira/matheuslimeira2.png</h2>
+  <pre id="info12">carregando...</pre>
+  <canvas id="cv12"></canvas>
+
+  <h2>LAMBANÇA — assets/lambanca/lambanca.png</h2>
+  <pre id="info13">carregando...</pre>
+  <canvas id="cv13"></canvas>
+
+  <h2>ADULTO FELIZ — assets/adulto_feliz/adultofeliz.png</h2>
+  <pre id="info14">carregando...</pre>
+  <canvas id="cv14"></canvas>
+
+  <h2>ADULTO FELIZ 2 (sem texto) — assets/adulto_feliz/adultofeliz2.png</h2>
+  <pre id="info15">carregando...</pre>
+  <canvas id="cv15"></canvas>
+
+  <h2>FAT GIRL (folha 1, órfã) — assets/fat_girl/fat_girl.png</h2>
+  <pre id="info16">carregando...</pre>
+  <canvas id="cv16"></canvas>
+
+  <h2>FAT GIRL 2 (folha 2, órfã) — assets/fat_girl/fat_girl2.png</h2>
+  <pre id="info17">carregando...</pre>
+  <canvas id="cv17"></canvas>
+
+  <h2>FAT GIRL 3 (em uso) — assets/fat_girl/fat_girl3.png</h2>
+  <pre id="info18">carregando...</pre>
+  <canvas id="cv18"></canvas>
+
+  <h2>MARCELÃO BLACK JW (em uso) — assets/marcelao/marcelao_black_jw2.png</h2>
+  <pre id="info19">carregando...</pre>
+  <canvas id="cv19"></canvas>
+
+  <h2>MARCELÃO BLACK JW (folha 1, órfã) — assets/marcelao/marcelao_black_jw.png</h2>
+  <pre id="info20">carregando...</pre>
+  <canvas id="cv20"></canvas>
+
+  <h2>CARGAS — assets/cargas/cargas.png</h2>
+  <pre id="info21">carregando...</pre>
+  <canvas id="cv21"></canvas>
+
+  <h2>CARECA (humano) — assets/careca/careca.png</h2>
+  <pre id="info22">carregando...</pre>
+  <canvas id="cv22"></canvas>
+
+  <h2>CARECA (verme) — assets/careca/careca_verme.png</h2>
+  <pre id="info23">carregando...</pre>
+  <canvas id="cv23"></canvas>
+
+  <h2>TUPAS — assets/tupas/tupas.png</h2>
+  <pre id="info24">carregando...</pre>
+  <canvas id="cv24"></canvas>
+
+  <h2>TUPAS (efeitos dos golpes) — assets/tupas/tupas2.png</h2>
+  <pre id="info25">carregando...</pre>
+  <canvas id="cv25"></canvas>
+
+  <h2>SOLDADO SMERG (normal) — assets/soldado_smerg/smerg_normal.png</h2>
+  <pre id="info26">carregando...</pre>
+  <canvas id="cv26"></canvas>
+
+  <h2>SOLDADO SMERG (assustado) — assets/soldado_smerg/scary_smerg.png</h2>
+  <pre id="info27">carregando...</pre>
+  <canvas id="cv27"></canvas>
+
+  <h2>CABELIN (com lasanha, em uso) — assets/cabelin/cabelin_lasanha.png</h2>
+  <pre id="info28">carregando...</pre>
+  <canvas id="cv28"></canvas>
+
+  <h2>CABELIN (sem lasanha) — assets/cabelin/cabelin.png</h2>
+  <pre id="info29">carregando...</pre>
+  <canvas id="cv29"></canvas>
+
+  <h2>SMERGULÃO (normal) — assets/smergulao/smergulao.png</h2>
+  <pre id="info30">carregando...</pre>
+  <canvas id="cv30"></canvas>
+
+  <h2>SMERGULÃO (furtivo) — assets/smergulao/smergulao_escondido.png</h2>
+  <pre id="info31">carregando...</pre>
+  <canvas id="cv31"></canvas>
+
+  <h2>CRIANÇA ROSA (criança) — assets/crianca_rosa/crianca_rosa.png</h2>
+  <pre id="info32">carregando...</pre>
+  <canvas id="cv32"></canvas>
+
+  <h2>CRIANÇA ROSA (demônio) — assets/crianca_rosa/crianca_rosa2.png</h2>
+  <pre id="info33">carregando...</pre>
+  <canvas id="cv33"></canvas>
+
+  <h2>CRIANÇA ROSA (efeitos) — assets/crianca_rosa/crianca_rosa_poderes.png</h2>
+  <pre id="info34">carregando...</pre>
+  <canvas id="cv34"></canvas>
+
+  <h2>URSÃO (invocação) — assets/crianca_rosa/crianca_rosa_urso.png</h2>
+  <pre id="info35">carregando...</pre>
+  <canvas id="cv35"></canvas>
+
+  <h2>RAIOS (efeitos do Cargas) — assets/cargas/raio_sprites.png</h2>
+  <pre id="info36">carregando...</pre>
+  <canvas id="cv36"></canvas>
+
+  <h2>PRODOCIMO (base) — assets/prodocimo/prodocimo.png</h2>
+  <pre id="info37">carregando...</pre>
+  <canvas id="cv37"></canvas>
+
+  <h2>PRODOCIMO (aperto de mão) — assets/prodocimo/prodocimo2.png</h2>
+  <pre id="info38">carregando...</pre>
+  <canvas id="cv38"></canvas>
+
+  <h2>PRODOCIMO (truques) — assets/prodocimo/prodocimo3.png</h2>
+  <pre id="info39">carregando...</pre>
+  <canvas id="cv39"></canvas>
+
+  <h2>DMATERELIZADOR (1) — assets/dmatrelizador/dmatrelizador.png</h2>
+  <pre id="info40">carregando...</pre>
+  <canvas id="cv40"></canvas>
+
+  <h2>DMATERELIZADOR (2) — assets/dmatrelizador/dmatrelizador2.png</h2>
+  <pre id="info41">carregando...</pre>
+  <canvas id="cv41"></canvas>
+
+  <h2>DMATERELIZADOR (3) — assets/dmatrelizador/dmatrelizador3.png</h2>
+  <pre id="info42">carregando...</pre>
+  <canvas id="cv42"></canvas>
+</div>
+
+<script src="js/spritesheet.js"></script>
+<script>
+function show(url, cvId, infoId){
+  const sheet = SpriteSheet.load(url);
+  const tick = setInterval(()=>{
+    if(sheet.error){ document.getElementById(infoId).textContent='ERRO: '+sheet.error+'\n(salve o arquivo em '+url+')'; clearInterval(tick); return; }
+    if(!sheet.ready) return;
+    clearInterval(tick);
+    document.getElementById(infoId).textContent = SpriteSheet.describe(sheet);
+    const cv=document.getElementById(cvId);
+    cv.width=sheet.img.width; cv.height=sheet.img.height;
+    const ctx=cv.getContext('2d'); ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(sheet.img,0,0);
+    ctx.lineWidth=2; ctx.font='12px monospace';
+    sheet.bands.forEach((band,bi)=>{
+      band.forEach((f,fi)=>{
+        ctx.strokeStyle='hsl('+(bi*57%360)+',100%,60%)';
+        ctx.strokeRect(f.x-1,f.y-1,f.w+2,f.h+2);
+        ctx.fillStyle='#000'; ctx.fillRect(f.x-1,f.y-15,30,14);
+        ctx.fillStyle='hsl('+(bi*57%360)+',100%,70%)';
+        ctx.fillText(bi+':'+fi, f.x, f.y-4);
+      });
+    });
+  }, 120);
+}
+show('assets/fat_smerg/fat_smerg.png','cv1','info1');
+show('assets/strong_smerg/strong_smerg.png','cv2','info2');
+show('assets/serrinha/serrinha_dog.png','cv3','info3');
+show('assets/fat_mango/fat_mango.png','cv4','info4');
+show('assets/mecas/mecasnormal.png','cv5','info5');
+show('assets/mecas/mecasqserobo.png','cv6','info6');
+show('assets/mecas/projeto_mecas_5000z.png','cv7','info7');
+show('assets/loirinha_cdi/lorinhadacdi.png','cv8','info8');
+show('assets/smergula/smergula3.png','cv9','info9');
+show('assets/smergula/smergula2.png','cv10','info10');
+show('assets/matheus_limeira/matheuslimeira.png','cv11','info11');
+show('assets/matheus_limeira/matheuslimeira2.png','cv12','info12');
+show('assets/lambanca/lambanca.png','cv13','info13');
+show('assets/adulto_feliz/adultofeliz.png','cv14','info14');
+show('assets/adulto_feliz/adultofeliz2.png','cv15','info15');
+show('assets/fat_girl/fat_girl.png','cv16','info16');
+show('assets/fat_girl/fat_girl2.png','cv17','info17');
+show('assets/fat_girl/fat_girl3.png','cv18','info18');
+show('assets/marcelao/marcelao_black_jw2.png','cv19','info19');
+show('assets/marcelao/marcelao_black_jw.png','cv20','info20');
+show('assets/cargas/cargas.png','cv21','info21');
+show('assets/careca/careca.png','cv22','info22');
+show('assets/careca/careca_verme.png','cv23','info23');
+show('assets/tupas/tupas.png','cv24','info24');
+show('assets/tupas/tupas2.png','cv25','info25');
+show('assets/soldado_smerg/smerg_normal.png','cv26','info26');
+show('assets/soldado_smerg/scary_smerg.png','cv27','info27');
+show('assets/cabelin/cabelin_lasanha.png','cv28','info28');
+show('assets/cabelin/cabelin.png','cv29','info29');
+show('assets/smergulao/smergulao.png','cv30','info30');
+show('assets/smergulao/smergulao_escondido.png','cv31','info31');
+show('assets/crianca_rosa/crianca_rosa.png','cv32','info32');
+show('assets/crianca_rosa/crianca_rosa2.png','cv33','info33');
+show('assets/crianca_rosa/crianca_rosa_poderes.png','cv34','info34');
+show('assets/crianca_rosa/crianca_rosa_urso.png','cv35','info35');
+show('assets/cargas/raio_sprites.png','cv36','info36');
+show('assets/prodocimo/prodocimo.png','cv37','info37');
+show('assets/prodocimo/prodocimo2.png','cv38','info38');
+show('assets/prodocimo/prodocimo3.png','cv39','info39');
+show('assets/dmatrelizador/dmatrelizador.png','cv40','info40');
+show('assets/dmatrelizador/dmatrelizador2.png','cv41','info41');
+show('assets/dmatrelizador/dmatrelizador3.png','cv42','info42');
+</script>
+</body>
+</html>

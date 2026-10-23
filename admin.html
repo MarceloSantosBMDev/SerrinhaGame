@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel Admin</title>
+<link rel="stylesheet" href="css/style.css?v=67">
+<style>
+  .admin-card{ width:min(520px,92vw); background:#120824; border:2px solid #34204f; border-radius:10px;
+    padding:18px; margin-bottom:16px; text-align:left; }
+  .admin-card h3{ color:#ff6b6b; font-size:12px; letter-spacing:1px; margin-bottom:8px; }
+  .admin-card p{ font-size:9px; color:#cbb8ee; line-height:1.7; margin-bottom:12px; }
+  .admin-card input{ width:100%; margin-bottom:10px; }
+  #ad-resultado{ font-size:9px; line-height:1.7; margin-top:10px; min-height:12px; }
+  #ad-status{ font-size:9px; color:#8a72b5; margin-bottom:14px; }
+
+  /* Com a tabela de estatísticas o painel ficou MAIS ALTO que a tela, e
+     aí o `justify-content:center` que ele herda de `.screen.active`
+     empurra o começo para fora: título, filtros e resumo somem para cima
+     e `overflow-y:auto` não rola para trás. Do topo para baixo resolve. */
+  #tela-admin.active{ justify-content:flex-start; padding:24px 10px 48px; }
+
+  /* ---- ESTATÍSTICAS DA RANQUEADA ---- */
+  .admin-card.wide{ width:min(760px,96vw); }
+  .admin-card.wide h3{ color:#5ad6ff; }
+  .st-filtros{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .st-fbtn{
+    font-family:var(--pixel); font-size:8px; padding:8px 10px; cursor:pointer;
+    background:#1b0f31; color:#cbb8ee; border:2px solid #3a2458; border-radius:5px;
+  }
+  .st-fbtn.on{ border-color:var(--neon); color:var(--neon); }
+  .st-resumo{ font-size:8px; color:#9fd8ff; line-height:1.8; margin-bottom:12px; }
+  .st-resumo b{ color:var(--neon); }
+  .st-aviso{ font-size:7px; color:#caa66a; line-height:1.7; margin-bottom:10px; }
+
+  .st-head, .st-linha{
+    display:grid; grid-template-columns:34px 1fr 88px 88px 62px;
+    gap:8px; align-items:center; padding:7px 8px; font-size:8px;
+  }
+  .st-head{ background:#1c0e33; color:var(--cyan); font-size:7px; letter-spacing:1px;
+            border-radius:6px 6px 0 0; }
+  .st-linha{ border-top:1px solid #221038; color:#d6c6f5; }
+  .st-linha.zerado{ opacity:.42; }
+  .st-tabela{ background:#0a0612; border:2px solid #34204f; border-radius:8px; overflow:hidden; }
+  .st-linha canvas{ display:block; width:32px; height:32px; }
+  .st-nome{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .st-nome i{ display:block; font-style:normal; font-size:6px; color:#8a72b5; margin-top:2px; }
+  /* barra + número: a barra é para bater o olho e comparar, o número é
+     para decidir. Só um dos dois sempre deixa a leitura pela metade. */
+  .st-barra{ position:relative; height:14px; background:#160c28; border:1px solid #2a1745; border-radius:3px; overflow:hidden; }
+  .st-barra i{ position:absolute; inset:0 auto 0 0; display:block; }
+  .st-barra span{ position:relative; z-index:1; display:block; text-align:center;
+                  font-size:7px; line-height:14px; text-shadow:1px 1px 0 #000; }
+  .st-vd{ font-size:7px; color:#9d86c4; text-align:right; }
+  .st-vazio{ padding:20px 12px; text-align:center; font-size:9px; color:#8a72b5; line-height:1.8; }
+  @media(max-width:620px){
+    /* a coluna V/D sai no celular — a barra de vitória já diz o essencial.
+       O cabeçalho PRECISA perder a mesma coluna (por isso ele também tem
+       a classe .st-vd): com 5 títulos numa grade de 4, o quinto quebrava
+       para uma linha nova e desalinhava a tabela inteira. */
+    .st-head, .st-linha{ grid-template-columns:28px 1fr 62px 62px; gap:5px; padding:6px 5px; }
+    .st-vd{ display:none; }
+    .st-linha canvas{ width:26px; height:26px; }
+    /* 96vw + o padding do painel estourava a largura e nascia rolagem
+       lateral: dentro do padding, 100% é a conta certa. */
+    .admin-card, .admin-card.wide{ width:100%; }
+    #tela-admin .title{ font-size:18px !important; letter-spacing:1px; }
+    #tela-admin.active{ padding:20px 8px 40px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="screen active" id="tela-login">
+  <h1 class="title" style="font-size:32px">PAINEL ADMIN</h1>
+  <div class="subtitle">acesso restrito</div>
+  <form class="auth-card" id="form-login">
+    <label>E-MAIL <input id="ad-email" type="email" autocomplete="email" placeholder="voce@email.com"></label>
+    <label>SENHA <input id="ad-pass" type="password" autocomplete="current-password" placeholder="••••••"></label>
+    <div class="auth-msg" id="ad-msg"></div>
+    <button class="btn-big" type="submit">ENTRAR</button>
+  </form>
+  <button class="btn-big alt2" onclick="location.href='index.html'">← VOLTAR AO JOGO</button>
+</div>
+
+<div class="screen" id="tela-negado">
+  <h1 class="title" style="font-size:28px">ACESSO NEGADO</h1>
+  <div class="hint" style="max-width:480px">Essa conta entrou certinho, mas não tem permissão para abrir o painel admin.</div>
+  <div class="menu" style="margin-top:20px">
+    <button class="btn-big" id="btn-sair-negado">SAIR E TENTAR OUTRA CONTA</button>
+    <button class="btn-big alt2" onclick="location.href='index.html'">← VOLTAR AO JOGO</button>
+  </div>
+</div>
+
+<div class="screen" id="tela-admin">
+  <h1 class="title" style="font-size:26px">🛠 PAINEL ADMIN</h1>
+  <div id="ad-status">carregando ranking…</div>
+
+  <!-- ====== ESTATÍSTICAS DA RANQUEADA ======
+       Sai do histórico de partidas (coleção `matches`): cada partida de
+       ranqueada grava o campo `meuTime` com os três lutadores daquele
+       jogador e o `resultado`. Dá para ler escolha e vitória por
+       personagem sem gravar nada novo. -->
+  <div class="admin-card wide">
+    <h3>📊 PERSONAGENS NA RANQUEADA</h3>
+    <p>Quem é mais escolhido e quanto cada um ganha. Serve para achar o que está forte demais
+       (muito escolhido <b>e</b> ganhando muito) e o que ninguém quer (pouco escolhido).</p>
+
+    <div class="st-filtros">
+      <button class="st-fbtn" data-dias="7">7 DIAS</button>
+      <button class="st-fbtn" data-dias="30">30 DIAS</button>
+      <button class="st-fbtn on" data-dias="0">TUDO</button>
+      <button class="st-fbtn on" id="st-ordem" data-por="escolhas">▼ MAIS ESCOLHIDOS</button>
+      <button class="st-fbtn" id="st-recarrega">↻ ATUALIZAR</button>
+    </div>
+
+    <div class="st-resumo" id="st-resumo">carregando…</div>
+    <div class="st-aviso" id="st-aviso"></div>
+
+    <div class="st-tabela">
+      <div class="st-head">
+        <span></span><span>LUTADOR</span><span>ESCOLHIDO</span><span>VITÓRIAS</span><span class="st-vd">V / D</span>
+      </div>
+      <div id="st-lista"><div class="st-vazio">carregando…</div></div>
+    </div>
+  </div>
+
+  <div class="admin-card">
+    <h3>⚠ RESETAR RANKING</h3>
+    <p>Apaga <b>todos</b> os perfis da ranqueada (rating, vitórias, derrotas, divisão) e todo o histórico
+       de partidas registrado. Não mexe em contas, login ou nos personagens — só zera a classificação
+       geral, como se a temporada estivesse recomeçando do zero. <b>Não dá pra desfazer.</b></p>
+    <button class="btn-big" id="btn-abrir-confirma">🗑 RESETAR RANKING</button>
+    <div id="bloco-confirma" hidden>
+      <p style="margin-top:12px">Para confirmar, digite <b>RESETAR</b> no campo abaixo:</p>
+      <input id="ad-confirma-texto" placeholder="RESETAR" autocomplete="off">
+      <button class="btn-big" id="btn-confirma-reset" style="background:#ff4d6d;border-color:#ff4d6d">CONFIRMAR RESET DEFINITIVO</button>
+      <button class="btn-big alt2" id="btn-cancela-reset">CANCELAR</button>
+    </div>
+    <div id="ad-resultado"></div>
+  </div>
+
+  <div class="menu">
+    <button class="btn-big alt2" id="btn-sair-admin">SAIR</button>
+    <button class="btn-big alt2" onclick="location.href='index.html'">← VOLTAR AO JOGO</button>
+  </div>
+</div>
+
+<!-- o elenco (nomes e sprites) para a tabela de estatísticas. São scripts
+     clássicos: rodam ANTES do módulo abaixo, então `Characters`/`Sprites`
+     já existem quando ele executa. -->
+<script src="js/spritesheet.js?v=7"></script>
+<script src="js/sprites.js?v=52"></script>
+<script src="js/characters.js?v=64"></script>
+<script src="js/firebase-config.js?v=8"></script>
+<script type="module">
+/* ============================================================
+   PAINEL ADMIN — login restrito por E-MAIL.
+   A checagem de verdade (quem pode apagar o ranking) mora nas
+   REGRAS do Firestore (firestore.rules: função admin()), não aqui —
+   esta tela só decide o que MOSTRAR. Alguém driblando a interface
+   ainda esbarraria nas regras do servidor na hora de escrever.
+   ============================================================ */
+const ADMIN_EMAIL = 'admin123@hotmail.com';
+const SDK = 'https://www.gstatic.com/firebasejs/10.12.2';
+
+function mostrar(id){
+  document.querySelectorAll('.screen').forEach(e=>e.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+if(!window.FIREBASE_READY){
+  mostrar('tela-negado');
+  document.querySelector('#tela-negado .hint').textContent =
+    'O Firebase ainda não está configurado neste ambiente (js/firebase-config.js).';
+} else {
+  const [{ initializeApp }, authMod, fsMod] = await Promise.all([
+    import(`${SDK}/firebase-app.js`),
+    import(`${SDK}/firebase-auth.js`),
+    import(`${SDK}/firebase-firestore.js`)
+  ]);
+  const app  = initializeApp(window.FIREBASE_CONFIG);
+  const auth = authMod.getAuth(app);
+  const db   = fsMod.getFirestore(app);
+  const { collection, getDocs, deleteDoc, doc, query, orderBy, limit } = fsMod;
+
+  function traduzErro(e){
+    const c=(e && e.code)||'';
+    if(c.includes('user-not-found'))       return 'Não achei uma conta com esse e-mail.';
+    if(c.includes('wrong-password') || c.includes('invalid-credential')) return 'E-mail ou senha incorretos.';
+    if(c.includes('too-many-requests'))    return 'Muitas tentativas. Tente de novo em instantes.';
+    if(c.includes('invalid-email'))        return 'E-mail inválido.';
+    return (e && e.message) || 'Não deu para entrar agora.';
+  }
+
+  document.getElementById('form-login').addEventListener('submit', async ev=>{
+    ev.preventDefault();
+    const msg=document.getElementById('ad-msg'); msg.textContent='';
+    const email=document.getElementById('ad-email').value.trim();
+    const pass=document.getElementById('ad-pass').value;
+    try{
+      await authMod.signInWithEmailAndPassword(auth, email, pass);
+      // onAuthStateChanged (abaixo) cuida de trocar de tela
+    }catch(e){ msg.textContent='⚠ '+traduzErro(e); }
+  });
+
+  document.getElementById('btn-sair-negado').onclick = ()=>authMod.signOut(auth);
+  document.getElementById('btn-sair-admin').onclick  = ()=>authMod.signOut(auth);
+
+  authMod.onAuthStateChanged(auth, async user=>{
+    if(!user){ mostrar('tela-login'); return; }
+    if((user.email||'').toLowerCase() !== ADMIN_EMAIL){ mostrar('tela-negado'); return; }
+    mostrar('tela-admin');
+    await atualizarStatus();
+    await carregarEstatisticas();
+  });
+
+  async function atualizarStatus(){
+    const st=document.getElementById('ad-status');
+    try{
+      const snap = await getDocs(collection(db,'players'));
+      st.textContent = snap.size+' perfil(is) no ranking agora.';
+    }catch(e){ st.textContent = 'Não deu para ler o ranking: '+e.message; }
+  }
+
+  /* ============================================================
+     ESTATÍSTICAS DA RANQUEADA — escolha e vitória por personagem
+
+     De onde sai o dado: toda partida de RANQUEADA grava um documento em
+     `matches` com `meuTime` ("id1,id2,id3") e `resultado`. Ou seja: já
+     dava para medir isso desde sempre, só faltava somar.
+
+     Duas coisas que mudam a leitura dos números e por isso aparecem
+     escritas na tela:
+       · cada partida gera DOIS documentos (um por jogador), então o que
+         contamos é "time registrado", não "partida". Por isso a coluna é
+         "% dos times" e não "% das partidas".
+       · partida vencida por ABANDONO entra igual (o ponto foi para o
+         ranking de verdade), mas infla a vitória de quem estava no time
+         do jogador que ficou. O total aparece separado no resumo.
+     ============================================================ */
+  let cacheMatches = null;      // baixa uma vez e refiltra na memória
+  let filtroDias = 0;           // 0 = tudo
+  let ordenarPor = 'escolhas';  // 'escolhas' | 'vitorias'
+  let animId = null;
+
+  function agregar(docs, dias){
+    const desde = dias ? Date.now() - dias*86400000 : 0;
+    const stats = {};
+    let registros = 0, desistencias = 0, maisAntigo = Infinity;
+
+    for(const m of docs){
+      // só ranqueada guarda o time; partida contra a IA não tem `meuTime`
+      if(!m || !m.meuTime) continue;
+      const quando = m.criadoEm || 0;
+      if(desde && quando < desde) continue;
+
+      const ids = String(m.meuTime).split(',').map(s=>s.trim()).filter(Boolean);
+      if(!ids.length) continue;
+
+      registros++;
+      if(m.desistencia) desistencias++;
+      if(quando && quando < maisAntigo) maisAntigo = quando;
+
+      // Set: se um time vier com o mesmo lutador repetido (dado antigo,
+      // antes do draft bloquear), ele conta UMA escolha, não duas.
+      for(const id of new Set(ids)){
+        const s = stats[id] || (stats[id] = { escolhas:0, v:0, d:0, e:0 });
+        s.escolhas++;
+        if(m.resultado === 'vitoria') s.v++;
+        else if(m.resultado === 'derrota') s.d++;
+        else s.e++;
+      }
+    }
+    return { stats, registros, desistencias,
+             desdeQuando: maisAntigo===Infinity ? null : maisAntigo };
+  }
+
+  function corDoWinrate(wr){
+    if(wr == null) return '#8a72b5';
+    if(wr >= 58) return '#ff6b6b';      // forte demais
+    if(wr >= 53) return '#ffd166';
+    if(wr <= 42) return '#5ad6ff';      // fraco demais
+    if(wr <= 47) return '#9fd8ff';
+    return '#3bff9c';                   // equilibrado
+  }
+
+  function renderEstatisticas(){
+    const lista  = document.getElementById('st-lista');
+    const resumo = document.getElementById('st-resumo');
+    const aviso  = document.getElementById('st-aviso');
+    if(!cacheMatches){ return; }
+
+    const { stats, registros, desistencias, desdeQuando } = agregar(cacheMatches, filtroDias);
+
+    if(!registros){
+      resumo.innerHTML = 'Nenhuma partida de ranqueada no período.';
+      aviso.textContent = '';
+      lista.innerHTML = '<div class="st-vazio">Sem partidas de ranqueada registradas ainda.<br>'+
+        'Os números aparecem aqui assim que as primeiras forem jogadas.</div>';
+      return;
+    }
+
+    const desdeTxt = desdeQuando ? new Date(desdeQuando).toLocaleDateString('pt-BR') : '—';
+    resumo.innerHTML =
+      `<b>${registros}</b> times registrados (≈ <b>${Math.round(registros/2)}</b> partidas) · `+
+      `desde ${desdeTxt}` +
+      (desistencias ? ` · <b>${desistencias}</b> por abandono` : '');
+    aviso.innerHTML =
+      'Cada partida grava um registro POR JOGADOR, então "escolhido" é a % dos <b>times</b>, não das partidas. '+
+      'Com menos de 10 escolhas o número de vitória não diz muita coisa — aparece marcado com <b>?</b>.';
+
+    // o elenco inteiro entra na lista: quem tem 0 escolha também é informação
+    const linhas = (typeof Characters!=='undefined' ? Characters.jogaveis() : []).map(c=>{
+      const s = stats[c.id] || { escolhas:0, v:0, d:0, e:0 };
+      const decididas = s.v + s.d;
+      return {
+        id:c.id, nome:c.name, titulo:c.title,
+        escolhas:s.escolhas, v:s.v, d:s.d,
+        pick: registros ? (s.escolhas/registros)*100 : 0,
+        wr: decididas ? (s.v/decididas)*100 : null,
+        poucos: decididas > 0 && decididas < 10
+      };
+    });
+
+    linhas.sort((a,b)=>{
+      if(ordenarPor === 'vitorias'){
+        // quem não tem partida decidida vai para o fim, não para o topo
+        if(a.wr == null && b.wr == null) return b.escolhas - a.escolhas;
+        if(a.wr == null) return 1;
+        if(b.wr == null) return -1;
+        return b.wr - a.wr;
+      }
+      return b.escolhas - a.escolhas || (b.wr||0) - (a.wr||0);
+    });
+
+    const maiorPick = Math.max(1, ...linhas.map(l=>l.pick));
+    lista.innerHTML = linhas.map(l=>{
+      const wrTxt = l.wr == null ? '—' : l.wr.toFixed(0)+'%' + (l.poucos ? ' ?' : '');
+      const cor   = corDoWinrate(l.poucos ? null : l.wr);
+      return `<div class="st-linha${l.escolhas?'':' zerado'}">
+        <canvas width="64" height="64" data-id="${l.id}"></canvas>
+        <span class="st-nome">${l.nome}<i>${l.titulo||''}</i></span>
+        <span class="st-barra">
+          <i style="width:${(l.pick/maiorPick*100).toFixed(1)}%;background:linear-gradient(180deg,#7a5ac0,#4a2f70)"></i>
+          <span>${l.pick.toFixed(0)}%</span>
+        </span>
+        <span class="st-barra">
+          <i style="width:${l.wr==null?0:l.wr.toFixed(1)}%;background:${cor};opacity:.45"></i>
+          <span style="color:${cor}">${wrTxt}</span>
+        </span>
+        <span class="st-vd">${l.v}V ${l.d}D</span>
+      </div>`;
+    }).join('');
+
+    if(!animId) desenharSprites();
+  }
+
+  /* os retratos são redesenhados a cada quadro de propósito: a folha de
+     sprites carrega DEPOIS da tabela aparecer, e um desenho único pegaria
+     só o boneco de reserva. */
+  function desenharSprites(){
+    animId = requestAnimationFrame(desenharSprites);
+    // o painel pode ficar aberto o dia inteiro numa aba esquecida: sem
+    // esta guarda, 9 canvas seriam redesenhados 60x por segundo para
+    // sempre, mesmo com a tela de estatísticas fora de vista.
+    const tela=document.getElementById('tela-admin');
+    if(!tela || !tela.classList.contains('active')) return;
+    if(typeof Sprites==='undefined' || typeof Characters==='undefined') return;
+    document.querySelectorAll('#st-lista canvas').forEach(cv=>{
+      const c = Characters.byId(cv.dataset.id);
+      if(c) Sprites.renderTo(cv, c, 'idle', 2, 0, 0);
+    });
+  }
+
+  async function carregarEstatisticas(forcar){
+    const lista=document.getElementById('st-lista');
+    const resumo=document.getElementById('st-resumo');
+    if(cacheMatches && !forcar){ renderEstatisticas(); return; }
+    resumo.textContent='carregando partidas…';
+    lista.innerHTML='<div class="st-vazio">carregando…</div>';
+    try{
+      /* orderBy + limit, sem `where`: filtrar por modo no servidor exigiria
+         criar um índice composto no console do Firebase. O filtro por
+         ranqueada é feito aqui mesmo (quem não tem `meuTime` não é
+         ranqueada), e o limite segura a conta se o histórico crescer. */
+      const snap = await getDocs(query(collection(db,'matches'), orderBy('criadoEm','desc'), limit(3000)));
+      cacheMatches = snap.docs.map(d=>d.data());
+      renderEstatisticas();
+    }catch(e){
+      resumo.textContent='';
+      lista.innerHTML='<div class="st-vazio" style="color:#ff6b6b">Não deu para ler o histórico: '+
+        (e.code||e.message)+'</div>';
+    }
+  }
+
+  // filtros de período
+  document.querySelectorAll('.st-fbtn[data-dias]').forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll('.st-fbtn[data-dias]').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      filtroDias = +b.dataset.dias;
+      renderEstatisticas();
+    };
+  });
+  // ordenação
+  document.getElementById('st-ordem').onclick = ev=>{
+    ordenarPor = ordenarPor==='escolhas' ? 'vitorias' : 'escolhas';
+    ev.currentTarget.textContent = ordenarPor==='escolhas' ? '▼ MAIS ESCOLHIDOS' : '▼ MAIOR VITÓRIA';
+    renderEstatisticas();
+  };
+  document.getElementById('st-recarrega').onclick = ()=>carregarEstatisticas(true);
+
+  document.getElementById('btn-abrir-confirma').onclick = ()=>{
+    document.getElementById('bloco-confirma').hidden=false;
+    document.getElementById('ad-confirma-texto').value='';
+    document.getElementById('ad-confirma-texto').focus();
+  };
+  document.getElementById('btn-cancela-reset').onclick = ()=>{
+    document.getElementById('bloco-confirma').hidden=true;
+  };
+
+  document.getElementById('btn-confirma-reset').onclick = async ()=>{
+    const campo=document.getElementById('ad-confirma-texto');
+    const resultado=document.getElementById('ad-resultado');
+    if(campo.value.trim().toUpperCase()!=='RESETAR'){
+      resultado.innerHTML='<span style="color:#ff6b6b">Digite exatamente RESETAR para confirmar.</span>';
+      return;
+    }
+    const btn=document.getElementById('btn-confirma-reset');
+    btn.disabled=true; btn.textContent='Resetando…';
+    resultado.textContent='';
+    try{
+      const [players, matches] = await Promise.all([
+        getDocs(collection(db,'players')),
+        getDocs(collection(db,'matches'))
+      ]);
+      let apagados=0, falhas=0, primeiroErro=null;
+      const alvos=[...players.docs.map(d=>doc(db,'players',d.id)), ...matches.docs.map(d=>doc(db,'matches',d.id))];
+      for(const ref of alvos){
+        try{ await deleteDoc(ref); apagados++; }
+        catch(e){ falhas++; if(!primeiroErro) primeiroErro=e.code||e.message; }
+      }
+      resultado.innerHTML = falhas===0
+        ? `<span style="color:#3bff9c">✅ Ranking resetado: ${apagados} item(ns) apagados (${players.size} perfis + ${matches.size} partidas).</span>`
+        : `<span style="color:#ff6b6b">${apagados} apagados, ${falhas} FALHARAM (de ${alvos.length} no total). `+
+          `Primeiro erro: ${primeiroErro}. Confira se as regras do Firestore (firestore.rules) foram publicadas — `+
+          `<code>firebase deploy --only firestore:rules</code>.</span>`;
+      document.getElementById('bloco-confirma').hidden=true;
+      await atualizarStatus();
+      cacheMatches=null;                 // o histórico foi junto: refaz as estatísticas
+      await carregarEstatisticas(true);
+    }catch(e){
+      resultado.innerHTML = `<span style="color:#ff6b6b">Erro ao resetar: ${e.message}</span>`;
+    }finally{
+      btn.disabled=false; btn.textContent='CONFIRMAR RESET DEFINITIVO';
+    }
+  };
+}
+</script>
+</body>
+</html>

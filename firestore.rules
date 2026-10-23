@@ -1,0 +1,90 @@
+rules_version = '2';
+
+/* ============================================================
+   REGRAS DO FIRESTORE — Arena Fighter
+
+   Publicar:  firebase deploy --only firestore:rules
+
+   O que garantem:
+     - Qualquer pessoa logada pode LER o ranking (leaderboard).
+     - Cada jogador só escreve no PRÓPRIO documento.
+     - Campos obrigatórios e limites de sanidade (rating, apelido).
+     - Ninguém apaga documentos de ninguém.
+
+   ⚠️ LIMITE IMPORTANTE: o resultado da partida é enviado pelo
+   navegador, então estas regras impedem alterar o rating DOS OUTROS,
+   mas não impedem alguém de forjar a própria vitória. Para ranqueada
+   séria, mova o cálculo para uma Cloud Function e troque o write de
+   'players' para: allow write: if false;  (só a função escreve).
+   ============================================================ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function logado()      { return request.auth != null; }
+    function dono(uid)     { return logado() && request.auth.uid == uid; }
+    /* admin do painel (admin.html): só essa conta pode resetar o ranking.
+       Checado pelo e-mail do TOKEN (emitido pelo próprio Firebase Auth no
+       login), não por algo que o cliente possa forjar mandando no pedido. */
+    function admin()       { return logado() && request.auth.token.email == 'admin123@hotmail.com'; }
+
+    function perfilValido(d) {
+      return d.keys().hasAll(['uid','nick','rating','wins','losses','draws','matches'])
+        && d.uid is string    && d.uid == request.auth.uid
+        && d.nick is string   && d.nick.size() >= 2 && d.nick.size() <= 20
+        && d.rating is number && d.rating >= 100 && d.rating <= 4000
+        && d.wins is number   && d.wins   >= 0
+        && d.losses is number && d.losses >= 0
+        && d.draws is number  && d.draws  >= 0
+        && d.matches is number&& d.matches>= 0
+        // avatar (perfil): id do personagem escolhido — string curta ou
+        // ausente/nulo (ninguém escolheu ainda). Quem confere se o id
+        // EXISTE de verdade no elenco é o cliente (Characters.byId); aqui
+        // só se garante que não vem um valor absurdo de tamanho.
+        && (!('avatar' in d) || d.avatar == null || (d.avatar is string && d.avatar.size() <= 30))
+        // maior rating já alcançado — mesma faixa do rating normal.
+        && (!('peakRating' in d) || (d.peakRating is number && d.peakRating >= 100 && d.peakRating <= 4000))
+        // recorde do modo sobrevivência (times derrubados seguidos). Sem
+        // trava de salto por escrita: uma corrida legítima pode render
+        // dezenas de vitórias numa tacada só, diferente do rating.
+        && (!('survivalRecord' in d) || (d.survivalRecord is number && d.survivalRecord >= 0 && d.survivalRecord <= 999))
+        // skins desbloqueadas: lista de ids curtos ("personagem__skin").
+        // Sem checar CONTRA o elenco (o cliente já faz isso em
+        // Characters.skinsComRegra) — só limite de tamanho de lista/item,
+        // mesma filosofia do avatar.
+        && (!('unlockedSkins' in d) || (d.unlockedSkins is list && d.unlockedSkins.size() <= 50));
+    }
+
+    // Ranking: todo mundo logado lê; só o dono escreve o próprio perfil.
+    // O admin (painel admin.html) pode apagar qualquer perfil para resetar o ranking.
+    match /players/{uid} {
+      allow read:   if logado();
+      allow create: if dono(uid) && perfilValido(request.resource.data);
+      allow update: if dono(uid) && perfilValido(request.resource.data)
+                    // trava salto absurdo de rating numa única partida
+                    && request.resource.data.rating <= resource.data.rating + 60
+                    && request.resource.data.rating >= resource.data.rating - 60
+                    // mesma trava pro maior rating já alcançado — sem isso
+                    // dava pra escrever "maior elo: 4000" numa tacada só,
+                    // sem nunca ter chegado lá de verdade.
+                    && (!('peakRating' in request.resource.data)
+                        || !('peakRating' in resource.data)
+                        || request.resource.data.peakRating <= resource.data.peakRating + 60);
+      allow delete: if admin();
+    }
+
+    // Histórico de partidas: cada um cria as suas; ninguém edita depois.
+    // O admin pode apagar para resetar o ranking junto com os perfis.
+    match /matches/{id} {
+      allow read:   if logado();
+      allow create: if logado() && request.resource.data.uid == request.auth.uid;
+      allow update: if false;
+      allow delete: if admin();
+    }
+
+    // Nada mais é acessível.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

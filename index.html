@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<!-- viewport-fit=cover: sem isso, no iPhone o jogo é desenhado dentro de
+     uma "caixa segura" com tarjas pretas em cima e embaixo. Com cover a
+     tela é usada inteira e quem desvia do notch é o CSS (env(safe-area-*),
+     usado na barra de conta e nos rodapés de ação). -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0612">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Arena Fighter</title>
+<link rel="stylesheet" href="css/style.css?v=78">
+</head>
+<body>
+
+<!-- ====== BOTÃO VOLTAR GLOBAL (topo-esquerda) ======
+     Fica fixo na tela inteira, funciona em QUALQUER aba (mesmo que o
+     conteúdo dela estoure a altura da tela) e nunca precisa de reload:
+     ele só troca de tela via goto(), sem tocar na página. -->
+<button id="global-back" class="global-back" onclick="voltarGlobal()" hidden>← VOLTAR</button>
+
+<!-- ====== BARRA DE CONTA (topo) ====== -->
+<div id="account-bar" class="account-bar">
+  <canvas id="acc-avatar-cv" class="avatar acc-avatar sem-clique" width="22" height="22" title="seu perfil"></canvas>
+  <span class="acc-who"><b id="acc-nick">Convidado</b></span>
+  <span class="acc-rating" id="acc-rating"></span>
+  <span class="acc-tag" id="acc-tag">local</span>
+  <button class="btn-mini" id="acc-btn" onclick="Menu.accountAction()">ENTRAR</button>
+</div>
+
+<!-- ====== MENU = HUB DA VILA ======
+     A tela inicial não é mais uma lista de botões: é um LUGAR. Você
+     anda pelos pontos da vila com ◀ ▶ e FALA com o personagem de cada
+     ponto — é ele que pergunta o que você quer jogar (js/hub.js). -->
+<div id="screen-menu" class="screen active">
+  <div class="hub">
+    <canvas id="hub-bg" class="hub-bg"></canvas>
+
+    <div class="hub-topo">
+      <div class="hub-titulo">ARENA FIGHTER</div>
+      <div class="hub-local" id="hub-local"></div>
+      <button class="btn-mini historia-btn" onclick="Historia.abrirMundo()">📖 HISTÓRIA</button>
+    </div>
+
+    <button class="hub-seta esq" onclick="Hub.mover(-1)" aria-label="ponto anterior">◀</button>
+    <button class="hub-seta dir" onclick="Hub.mover(1)"  aria-label="próximo ponto">▶</button>
+
+    <div class="hub-cena" onclick="Hub.falar()">
+      <canvas id="hub-char" width="300" height="340"></canvas>
+      <div class="hub-tag" id="hub-tag"></div>
+      <div class="hub-nome" id="hub-nome"></div>
+    </div>
+
+    <div class="hub-pontos" id="hub-pontos"></div>
+    <div class="hub-dica" id="hub-dica">
+      ◀ ▶ andar pela vila &nbsp;·&nbsp; <b>ESPAÇO</b> ou clique no personagem para <b>FALAR</b>
+    </div>
+    <!-- no celular a dica de teclado não serve e "toque no personagem"
+         ninguém adivinha: o botão diz o que fazer e fica na altura do
+         polegar. Some no monitor e enquanto a conversa está aberta. -->
+    <button class="hub-falar" onclick="Hub.falar()">💬 FALAR</button>
+
+    <div class="hub-dialogo" id="hub-dialogo" hidden></div>
+  </div>
+</div>
+
+<!-- ====== MODO HISTÓRIA: MAPA DO MUNDO ====== -->
+<div id="screen-historia-mapa" class="screen">
+  <div class="mapa-mundo">
+    <div class="mapa-titulo" id="mapa-titulo">🗺️ O MUNDO DE SERRINHA WORLD</div>
+    <!-- DUAS CAMPANHAS (js/historia.js): a normal e a da Condenação (o bot
+         da rainha joga do outro lado). Cada uma guarda o próprio progresso. -->
+    <div class="mapa-modos" role="tablist">
+      <button class="mapa-modo" data-modo="normal" onclick="Historia.trocarModo('normal')">📖 CAMPANHA</button>
+      <button class="mapa-modo cond" data-modo="condenacao" onclick="Historia.trocarModo('condenacao')">⚖ CONDENAÇÃO</button>
+    </div>
+    <div class="mapa-sub" id="mapa-sub"></div>
+    <div class="mapa-quadro">
+      <img src="modohistoria/mapa.png" class="mapa-img" alt="Mapa do mundo">
+      <div class="mapa-pontos" id="mapa-pontos"></div>
+    </div>
+    <div class="mapa-dica" id="mapa-dica">Toque num local do mapa para ver o que rola lá.</div>
+  </div>
+</div>
+
+<!-- ====== MODO HISTÓRIA: CENA CINEMATOGRÁFICA ====== -->
+<div id="screen-historia-cena" class="screen">
+  <div class="cena-historia">
+    <canvas id="historia-bg" class="ch-bg"></canvas>
+    <div class="ch-legenda" id="ch-legenda"></div>
+    <canvas id="historia-char" class="ch-char" width="320" height="380"></canvas>
+    <button class="ch-pular" onclick="Historia.pular()">PULAR ▶▶</button>
+    <div class="ch-caixa" id="ch-caixa" onclick="Historia.avancar()">
+      <div class="ch-nome" id="ch-nome" hidden></div>
+      <div class="ch-texto" id="ch-texto"></div>
+      <div class="ch-continuar">▼ toque para continuar</div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODO HISTÓRIA: FASES DO CAPÍTULO ====== -->
+<div id="screen-historia-fases" class="screen">
+  <h2 class="screen-title" id="hf-titulo">CAPÍTULO</h2>
+  <div class="hf-sub" id="hf-sub"></div>
+  <div class="hf-lista" id="hf-lista"></div>
+  <button class="btn-big alt2" onclick="Historia.abrirMapa()">🗺️ VOLTAR AO MAPA</button>
+</div>
+
+<!-- ====== MODO HISTÓRIA: MUNDO ABERTO (js/overworld.js) ======
+     Canvas do mapa + HUD por cima. Os painéis (diário, mapa-múndi, menu,
+     Arquivo, Créditos) abrem DENTRO desta tela, sem trocar de screen. -->
+<div id="screen-mundo" class="screen">
+  <canvas id="mundo-cv" class="mundo-cv"></canvas>
+  <div id="mundo-toque" class="mundo-toque"></div>
+  <div id="mundo-joy" class="mundo-joy" hidden><div id="mundo-joy-bola" class="mundo-joy-bola"></div></div>
+  <canvas id="mundo-mini" class="mundo-mini" width="132" height="132" title="Minimapa (Tab)"></canvas>
+  <div id="mundo-local" class="mundo-local"></div>
+  <div id="mundo-objetivo" class="mundo-objetivo" hidden onclick="Mundo.abrirPainel('diario')">
+    <b id="mundo-obj-tit"></b><span id="mundo-obj-txt"></span><i id="mundo-obj-dist"></i>
+  </div>
+  <div class="mundo-botoes">
+    <button class="mb-start" onclick="Mundo.abrirPainel('start')" title="Escolher personagem (P)">START</button>
+    <button onclick="Mundo.abrirPainel('mapa')" title="Mapa (M)">🗺</button>
+    <button onclick="Mundo.abrirPainel('diario')" title="Diário (J)">📜</button>
+    <button onclick="Mundo.abrirPainel('menu')" title="Menu (Esc)">☰</button>
+  </div>
+  <button id="mundo-btn-a" class="mundo-btn-a" onclick="Mundo.apertarA()">Ⓐ</button>
+  <div id="mundo-dica" class="mundo-dica" hidden></div>
+  <div id="mundo-toast" class="mundo-toast"></div>
+  <div id="mundo-fala" class="mundo-fala" hidden onclick="Mundo.apertarA()">
+    <canvas id="mundo-fala-retrato" class="mf-retrato" width="120" height="150"></canvas>
+    <div class="mf-corpo">
+      <div id="mundo-fala-nome" class="mf-nome" hidden></div>
+      <div id="mundo-fala-texto" class="mf-texto"></div>
+      <div id="mundo-fala-opcoes" class="mf-opcoes" hidden></div>
+      <div class="mf-seta">▼</div>
+    </div>
+  </div>
+  <div id="mundo-painel" class="mundo-painel" hidden>
+    <div class="mp-caixa">
+      <div class="mp-topo"><span id="mundo-painel-tit"></span><button class="mp-fechar" onclick="Mundo.fecharPaineis()">✖</button></div>
+      <div class="mp-corpo"></div>
+    </div>
+  </div>
+  <div id="mundo-fade" class="mundo-fade"></div>
+  <div id="mundo-carregando" class="mundo-carregando" hidden>CARREGANDO O MUNDO…</div>
+</div>
+
+<!-- ====== 3x3: MONTAR TIME ====== -->
+<div id="screen-team" class="screen">
+  <h2 class="screen-title"><span id="team-titulo">⚔ MONTE SEU TIME</span> <span id="team-count">0/3</span></h2>
+  <div class="team-grid" id="team-grid"></div>
+  <div class="team-info" id="team-info"></div>
+  <div class="team-btns">
+    <button class="btn-big off" id="team-start" onclick="TurnUI.comecar()">COMEÇAR BATALHA</button>
+    <button class="btn-big alt2" onclick="TurnUI.sairMontagem()">VOLTAR</button>
+  </div>
+</div>
+
+<!-- ====== 3x3: BATALHA ====== -->
+<div id="screen-battle" class="screen">
+  <div class="bt-top">
+    <span id="bt-rodada">RODADA 1</span>
+    <span id="bt-local"></span>
+    <span id="bt-terreno"></span>
+    <!-- no celular o histórico fica com 3 linhas para sobrar tela para
+         os golpes; este botão abre ele em cima quando o jogador quer
+         conferir o que aconteceu. Escondido no monitor (cabe tudo). -->
+    <button class="bt-log-btn" title="mostrar/ocultar o histórico"
+      onclick="document.getElementById('screen-battle').classList.toggle('log-max')">📜</button>
+  </div>
+  <div class="bt-ordem-wrap">ORDEM: <span id="bt-ordem"></span></div>
+  <!-- PALCO: fundo pixelado + os dois times um de frente para o outro -->
+  <div class="bt-palco" id="bt-palco">
+    <canvas id="bt-bg"></canvas>
+    <div class="bt-lado aliado" id="team-aliado"></div>
+    <div class="bt-vs">⚔</div>
+    <div class="bt-lado inimigo" id="team-inimigo"></div>
+  </div>
+  <div class="bt-baixo">
+    <div class="bt-log" id="bt-log"></div>
+    <div class="bt-skills" id="bt-skills"></div>
+  </div>
+  <!-- ficha do lutador (o que cada golpe faz) — abre pela 🔎 -->
+  <div class="bt-ficha" id="bt-ficha"></div>
+</div>
+
+<!-- ====== ONLINE: escolher modo ====== -->
+<div id="screen-online" class="screen">
+  <h2 class="screen-title">🌐 JOGAR ONLINE</h2>
+  <div class="online-rank" id="online-rank"></div>
+  <div class="menu menu-grid" style="width:min(560px,92vw)">
+    <button class="btn-big alt" onclick="Online.escolherModo('casual')">
+      🎲 CASUAL <small>3x3 por turnos · monte seu time · sem alterar rating</small>
+    </button>
+    <button class="btn-big rank" onclick="Online.escolherModo('ranked')">
+      🏆 RANQUEADA <small>3x3 por turnos · DRAFT ao vivo · vale pontos e divisão</small>
+    </button>
+    <button class="btn-big alt2" onclick="Menu.showLeaderboard()">
+      📊 RANKING <small>ver classificação</small>
+    </button>
+    <button class="btn-big alt" onclick="Espectador.abrirLista()">
+      👁 ASSISTIR AO VIVO <small>ranqueadas acontecendo agora · não precisa de conta</small>
+    </button>
+  </div>
+  <div class="online-status" id="online-status"></div>
+  <button class="btn-big alt2" onclick="goto('menu')">VOLTAR</button>
+</div>
+
+<!-- ====== MODO ESPECTADOR: ranqueadas ao vivo (js/espectador.js) ====== -->
+<div id="screen-aovivo" class="screen">
+  <h2 class="screen-title">👁 RANQUEADAS AO VIVO</h2>
+  <div class="av-sub" id="aovivo-sub"></div>
+  <div class="av-lista" id="aovivo-lista"></div>
+  <button class="btn-big alt2" onclick="Espectador.sair()">VOLTAR</button>
+</div>
+
+<!-- ====== MATCHMAKING ====== -->
+<div id="screen-matchmaking" class="screen">
+  <h2 class="screen-title">PROCURANDO PARTIDA</h2>
+  <div class="mm-box">
+    <div class="mm-spinner"></div>
+    <div class="mm-status" id="mm-status">Procurando adversário…</div>
+    <div class="mm-sub" id="mm-sub"></div>
+    <div class="mm-time" id="mm-time">0s</div>
+  </div>
+  <button class="btn-big alt2" onclick="Online.cancelar()">CANCELAR</button>
+</div>
+
+<!-- ====== DRAFT DA RANQUEADA ====== -->
+<div id="screen-draft" class="screen">
+  <h2 class="screen-title" id="draft-titulo">🏆 DRAFT — RANQUEADA</h2>
+  <div class="draft-status" id="draft-status">Conectando com o adversário…</div>
+  <!-- MODO CONDENAÇÃO (js/condenacao.js) reaproveita esta tela: a fala da
+       rainha explica cada ban/escolha do bot; vazio na ranqueada. -->
+  <div class="draft-fala" id="draft-fala"></div>
+  <div class="draft-teams">
+    <div class="draft-team mine">
+      <h3>SEU TIME</h3>
+      <div class="draft-chips" id="draft-meu"></div>
+    </div>
+    <div class="draft-team theirs">
+      <h3 id="draft-nome-dele">ADVERSÁRIO</h3>
+      <div class="draft-chips" id="draft-dele"></div>
+    </div>
+  </div>
+  <div class="grid-3x3" id="draft-grid"></div>
+  <div class="draft-acoes" id="draft-acoes"></div>
+</div>
+
+<!-- ====== RANKING ====== -->
+<div id="screen-leaderboard" class="screen">
+  <h2 class="screen-title">🏆 RANKING</h2>
+  <div class="lb-you" id="lb-you"></div>
+  <div class="lb-wrap">
+    <div class="lb-head"><span>#</span><span>LUTADOR</span><span>V/D</span><span>RATING</span></div>
+    <div id="lb-list" class="lb-list"><div class="lb-empty">carregando…</div></div>
+  </div>
+  <div class="lb-note" id="lb-note"></div>
+  <button class="btn-big alt2" id="lb-btn-escada" onclick="Menu.toggleEscada()">📈 COMO SUBIR NO RANKING</button>
+  <div class="lb-escada" id="lb-escada" hidden></div>
+  <button class="btn-big" onclick="goto('online')">VOLTAR</button>
+</div>
+
+<!-- ====== PERFIL DO JOGADOR (o seu ou o de quem você clicou no ranking) ====== -->
+<div id="screen-profile" class="screen">
+  <h2 class="screen-title">👤 PERFIL</h2>
+  <div id="profile-body"><div class="lb-empty">carregando…</div></div>
+  <button class="btn-big" onclick="goto('leaderboard')">VOLTAR</button>
+</div>
+
+<!-- ====== ESCOLHER AVATAR (foto de perfil = rosto de um personagem) ====== -->
+<div id="screen-avatar" class="screen">
+  <h2 class="screen-title">🖼 ESCOLHER AVATAR</h2>
+  <p class="auth-note" style="margin-bottom:12px">Escolha o personagem que aparece como sua foto de perfil.</p>
+  <div class="avatar-grid" id="avatar-grid"></div>
+  <button class="btn-big alt2" onclick="goto('profile')">VOLTAR</button>
+</div>
+
+<!-- ====== LOGIN ====== -->
+<div id="screen-login" class="screen">
+  <h2 class="screen-title">ENTRAR</h2>
+  <form class="auth-card" onsubmit="return Menu.doLogin(event)">
+    <label>E-MAIL <input id="li-email" type="email" autocomplete="email" placeholder="voce@email.com"></label>
+    <label>SENHA <input id="li-pass" type="password" autocomplete="current-password" placeholder="••••••"></label>
+    <div class="auth-msg" id="li-msg"></div>
+    <button class="btn-big" type="submit">ENTRAR</button>
+    <div class="auth-links">
+      <button class="btn-link" type="button" onclick="goto('signup')">Criar conta</button>
+      <button class="btn-link" type="button" onclick="Menu.guest()">Jogar sem conta</button>
+    </div>
+  </form>
+  <p class="auth-note">🔒 Por enquanto o perfil fica salvo <b>só neste navegador</b>.<br>Quando você me passar a config do Firebase, isso vira conta de verdade (e habilita o online).</p>
+  <button class="btn-big alt2" onclick="goto('menu')">VOLTAR</button>
+</div>
+
+<!-- ====== CADASTRO ====== -->
+<div id="screen-signup" class="screen">
+  <h2 class="screen-title">CRIAR CONTA</h2>
+  <form class="auth-card" onsubmit="return Menu.doSignup(event)">
+    <label>APELIDO <input id="su-nick" maxlength="14" placeholder="Seu nome no ringue"></label>
+    <label>E-MAIL <input id="su-email" type="email" autocomplete="email" placeholder="voce@email.com"></label>
+    <label>SENHA <input id="su-pass" type="password" autocomplete="new-password" placeholder="mínimo 6 caracteres"></label>
+    <label>CONFIRMAR SENHA <input id="su-pass2" type="password" autocomplete="new-password" placeholder="repita a senha"></label>
+    <div class="auth-msg" id="su-msg"></div>
+    <button class="btn-big" type="submit">CRIAR CONTA</button>
+    <div class="auth-links">
+      <button class="btn-link" type="button" onclick="goto('login')">Já tenho conta</button>
+    </div>
+  </form>
+  <button class="btn-big alt2" onclick="goto('menu')">VOLTAR</button>
+</div>
+
+<!-- ====== CATÁLOGO DE PERSONAGENS ====== -->
+<div id="screen-catalogo" class="screen">
+  <h2>CATÁLOGO DE PERSONAGENS</h2>
+  <div class="race-legend" id="catalog-races"></div>
+  <div class="grid-3x3" id="catalog-grid"></div>
+  <div class="info-panel" id="catalog-info"></div>
+  <button class="btn-big" onclick="goto('menu')">VOLTAR</button>
+</div>
+
+<!-- ====== PATCH NOTES ====== -->
+<div id="screen-patchnotes" class="screen">
+  <h2 class="screen-title">📜 PATCH NOTES</h2>
+  <div class="pn-list" id="pn-list"></div>
+  <button class="btn-big" onclick="goto('menu')">VOLTAR</button>
+</div>
+
+<!-- ?v= evita o navegador servir versão antiga em cache (suba o número ao editar) -->
+<script src="js/sprites.js?v=62"></script>
+<script src="js/spritesheet.js?v=7"></script>
+<script src="js/characters.js?v=105"></script>
+<script src="js/catalog.js?v=5"></script>
+<script src="js/patchnotes.js?v=53"></script>
+<script src="js/firebase-config.js?v=8"></script>
+<script src="js/auth.js?v=10"></script>
+<script src="js/ranked.js?v=19"></script>
+<script src="js/net.js?v=42"></script>
+<script src="js/online.js?v=45"></script>
+<script src="js/turndata.js?v=105"></script>
+<script src="js/turnbg.js?v=54"></script>
+<script src="js/turnfx.js?v=42"></script>
+<script src="js/turngolpes.js?v=4"></script>
+<script src="js/turnbattle.js?v=90"></script>
+<script src="js/turnui.js?v=83"></script>
+<script src="js/turndraft.js?v=6"></script>
+<script src="js/condenacao_dados.js?v=10"></script>
+<script src="js/condenacao.js?v=2"></script>
+<script src="js/turnonline.js?v=51"></script>
+<script src="js/hub.js?v=10"></script>
+<script src="js/historia.js?v=8"></script>
+<script src="js/ow_arte.js?v=3"></script>
+<script src="js/ow_arte_extra.js?v=2"></script>
+<script src="js/ow_pintor.js?v=4"></script>
+<script src="js/overworld.js?v=5"></script>
+<script src="js/missoes.js?v=4"></script>
+<script src="js/mapas/interiores_auto.js?v=2"></script>
+<script src="js/mapas/telaviv.js?v=4"></script>
+<script src="js/mapas/interiores_c1.js?v=1"></script>
+<script src="js/mapas/interiores_c1b.js?v=2"></script>
+<script src="js/mapas/estradas.js?v=2"></script>
+<script src="js/mapas/smergulus.js?v=2"></script>
+<script src="js/mapas/interiores_c2.js?v=2"></script>
+<script src="js/roteiro_c1.js?v=4"></script>
+<script src="js/roteiro_c1b.js?v=3"></script>
+<script src="js/roteiro_c2.js?v=2"></script>
+<script src="js/espectador.js?v=1"></script>
+<script>
+/* ============ NAVEGAÇÃO E MENU ============ */
+const Menu = (function(){
+  async function online(){
+    const u=Auth.user();
+    if(!u || u.provider==='guest'){ toast('Entre com uma conta para jogar online'); goto('login'); return; }
+    goto('online');
+  }
+  /* a tela online também é alcançada por VOLTAR (fim de partida, cancelar
+     a fila) — então quem preenche patente e status é o goto(), não só o
+     botão do menu. Antes, voltar para cá deixava o quadro de patente com
+     o dado velho da sessão anterior. */
+  async function pintarOnline(){
+    const box=document.getElementById('online-rank');
+    const st=document.getElementById('online-status');
+    st.innerHTML = Net.kind()==='firebase'
+      ? '☁ Conectado ao servidor'
+      : '💾 <b>Modo local</b> — dá para testar abrindo o jogo em duas abas. Ligue o Firebase para jogar com gente de verdade.';
+    try{
+      const p=await Ranked.profile();
+      if(p){ const t=Ranked.tier(p.rating);
+        box.innerHTML=`<div class="or-tier" style="border-color:${t.cor}">`+
+          `<b style="color:${t.cor}">${t.label}</b><span>${p.rating} pts</span>`+
+          (t.divisao? `<i>faltam ${t.faltam} pts para subir</i>`:'<i>patente máxima</i>')+`</div>`;
+      }
+    }catch(e){ box.innerHTML=''; }
+  }
+  async function showLeaderboard(){
+    goto('leaderboard');
+    const lista=document.getElementById('lb-list'), voce=document.getElementById('lb-you'), nota=document.getElementById('lb-note');
+    nota.textContent = Ranked.isCloud()? '☁ Ranking na nuvem (Firebase)' : '💾 Ranking local — ligue o Firebase para valer online';
+    lista.innerHTML='<div class="lb-empty">carregando…</div>';
+    try{
+      const top=await Ranked.leaderboard(20);
+      const eu=Auth.user();
+      if(!top.length){ lista.innerHTML='<div class="lb-empty">Ninguém no ranking ainda. Jogue uma ranqueada!</div>'; }
+      else{
+        lista.innerHTML = top.map((p,i)=>{
+          const t=Ranked.tier(p.rating);
+          const meu = eu && p.uid===eu.uid ? ' meu':'';
+          const medalha = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+          // a linha inteira abre o perfil (clicável) — pedido explícito:
+          // "no ranking, conseguir clicar e ver o perfil do jogador".
+          return `<div class="lb-row${meu}" onclick="Menu.showProfile('${p.uid}')"><span>${medalha}</span>`+
+                 `<span class="lb-row-me"><canvas class="avatar sem-clique" id="lb-av-${i}" width="20" height="20"></canvas>`+
+                 `<span class="lb-nick">${p.nick} <i style="color:${t.cor}">${t.nome}</i></span></span>`+
+                 `<span>${p.wins||0}/${p.losses||0}</span>`+
+                 `<span class="lb-rating">${p.rating}</span></div>`;
+        }).join('');
+        top.forEach((p,i)=> pintarAvatarComRetry(document.getElementById('lb-av-'+i), p.avatar));
+      }
+      const meu=await Ranked.profile(true);
+      voce.innerHTML = meu
+        ? `Você: <b>${meu.nick}</b> · <b style="color:${Ranked.tier(meu.rating).cor}">${Ranked.tier(meu.rating).nome}</b> · Rating <b>${meu.rating}</b> · ${meu.wins}V ${meu.losses}D ${meu.draws}E · `+
+          `<button class="btn-link" style="font-size:8px" onclick="Menu.showProfile('${meu.uid}')">ver meu perfil</button>`
+        : 'Entre com uma conta para aparecer no ranking.';
+      atualizaBarra();
+      renderEscada(meu);
+    }catch(e){
+      lista.innerHTML='<div class="lb-empty">Não deu para carregar: '+e.message+'</div>';
+    }
+  }
+
+  /* ---------- PERFIL DO JOGADOR (avatar + ficha pública) ---------- */
+  /* desenha o rosto do PERSONAGEM escolhido como avatar num canvas.
+     `charId` nulo = jogador ainda não escolheu nenhum. As folhas dos
+     personagens carregam por rede (SpriteSheet.load), então o retry
+     cobre o caso de a tela abrir antes da imagem terminar de chegar. */
+  function pintarAvatarEm(cv, charId){
+    if(!cv) return;
+    const c = charId && typeof Characters!=='undefined' ? Characters.byId(charId) : null;
+    if(!c){
+      const ctx=cv.getContext('2d'); ctx.clearRect(0,0,cv.width,cv.height);
+      ctx.fillStyle='#5a4a78'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.font=Math.round(cv.width*0.55)+'px sans-serif';
+      ctx.fillText('?', cv.width/2, cv.height/2+1);
+      return;
+    }
+    Sprites.renderFace(cv, c);
+  }
+  function pintarAvatarComRetry(cv, charId){
+    if(!cv) return;
+    pintarAvatarEm(cv, charId);
+    [250,600,1200,2500].forEach(ms=>setTimeout(()=>{ if(document.body.contains(cv)) pintarAvatarEm(cv, charId); }, ms));
+  }
+
+  async function showProfile(uid){
+    goto('profile');
+    const body=document.getElementById('profile-body');
+    body.innerHTML='<div class="lb-empty">carregando…</div>';
+    try{
+      const dados = await Ranked.profilePublico(uid);
+      if(!dados){ body.innerHTML='<div class="lb-empty">Perfil não encontrado.</div>'; return; }
+      const p=dados.perfil, fav=dados.favorito;
+      const tAtual=Ranked.tier(p.rating), tPico=Ranked.tier(p.peakRating||p.rating);
+      const eu=Auth.user(), souEu = !!(eu && eu.uid===uid);
+      const favChar = fav && typeof Characters!=='undefined' ? Characters.byId(fav.charId) : null;
+      body.innerHTML =
+        `<div class="perfil-card">`+
+          `<canvas class="avatar perfil-avatar sem-clique" id="perfil-avatar-cv" width="96" height="96"></canvas>`+
+          `<div class="perfil-nick">${p.nick}</div>`+
+          `<div class="perfil-tier" style="color:${tAtual.cor}">${tAtual.label}</div>`+
+          (souEu? `<button class="btn-mini perfil-editar" onclick="Menu.showAvatarPicker()">🖼 TROCAR FOTO</button>` : '')+
+          `<div class="perfil-linha">`+
+            `<div class="perfil-stat"><span class="k">Elo atual</span>`+
+              `<span class="v" style="color:${tAtual.cor}">${tAtual.label} · ${p.rating}</span></div>`+
+            `<div class="perfil-stat"><span class="k">Maior elo</span>`+
+              `<span class="v" style="color:${tPico.cor}">${tPico.label} · ${p.peakRating||p.rating}</span></div>`+
+            `<div class="perfil-stat"><span class="k">🏕 Recorde na sobrevivência</span>`+
+              `<span class="v">${p.survivalRecord? p.survivalRecord+' '+(p.survivalRecord===1?'time':'times') : 'ainda não jogou'}</span></div>`+
+            `<div class="perfil-stat"><span class="k">Winrate na ranqueada</span>`+
+              `<span class="v">${dados.winrateRanked==null? '— (nenhuma decidida)' : dados.winrateRanked+'% ('+dados.decididas+' partidas)'}</span></div>`+
+            `<div class="perfil-stat"><span class="k">Personagem favorito</span>`+
+              (fav
+                ? `<span class="v perfil-fav"><canvas class="avatar sem-clique" id="perfil-fav-cv" width="30" height="30"></canvas> ${favChar?favChar.name:fav.charId} (${fav.vezes}x)</span>`
+                : `<span class="v perfil-vazio">ainda não jogou online</span>`)+
+            `</div>`+
+          `</div>`+
+        `</div>`;
+      pintarAvatarComRetry(document.getElementById('perfil-avatar-cv'), p.avatar);
+      if(fav) pintarAvatarComRetry(document.getElementById('perfil-fav-cv'), fav.charId);
+    }catch(e){
+      body.innerHTML='<div class="lb-empty">Não deu para carregar: '+e.message+'</div>';
+    }
+  }
+
+  async function showAvatarPicker(){
+    goto('avatar');
+    const grid=document.getElementById('avatar-grid');
+    // sempre busca de novo (não usa Ranked.cached()): quem chega aqui só
+    // pelo botão TROCAR FOTO do PRÓPRIO perfil, e o perfil que acabou de
+    // ser mostrado pode ter vindo por profilePublico() — que NÃO alimenta
+    // o cache de Ranked.profile() (é o de OUTRO jogador, em geral).
+    const meu = await Ranked.profile();
+    const atual = meu && meu.avatar;
+    const ids = (typeof TurnData!=='undefined')? Object.keys(TurnData.FICHAS) : [];
+    grid.innerHTML = ids.map(id=>{
+      const c=Characters.byId(id);
+      return `<div class="avatar-cell${id===atual?' sel':''}" onclick="Menu.escolherAvatar('${id}')">`+
+        `<canvas class="avatar sem-clique" id="av-pick-${id}" width="70" height="70"></canvas>`+
+        `<span>${c?c.name:id}</span></div>`;
+    }).join('');
+    ids.forEach(id=>pintarAvatarComRetry(document.getElementById('av-pick-'+id), id));
+  }
+
+  async function escolherAvatar(charId){
+    try{
+      await Ranked.setAvatar(charId);
+      toast('Foto de perfil atualizada!');
+      pintarBarraAvatar();
+      const eu=Auth.user();
+      if(eu) showProfile(eu.uid);
+    }catch(e){ toast('⚠ '+e.message); }
+  }
+
+  async function pintarBarraAvatar(){
+    const cv=document.getElementById('acc-avatar-cv'); if(!cv) return;
+    const u=Auth.user();
+    if(!u || u.provider==='guest'){ pintarAvatarEm(cv, null); cv.onclick=null; return; }
+    cv.onclick=()=>Menu.showProfile(u.uid);
+    try{ const p=await Ranked.profile(); pintarAvatarComRetry(cv, p&&p.avatar); }
+    catch(e){ pintarAvatarEm(cv, null); }
+  }
+
+  function renderEscada(meuPerfil){
+    const box=document.getElementById('lb-escada'); if(!box) return;
+    const minhaPatente = meuPerfil? Ranked.tier(meuPerfil.rating).nome : null;
+    box.innerHTML = Ranked.ladder().slice().reverse().map(t=>{
+      const faixa = t.semDivisao ? (t.base+'+ pts') : (t.base+'–'+(t.base+240-1)+' pts (4 divisões de 60 pts)');
+      const atual = t.nome===minhaPatente ? ' atual' : '';
+      return `<div class="lb-escada-item${atual}" style="border-color:${t.cor}">`+
+        `<span class="lb-escada-ic">${t.icone}</span>`+
+        `<span class="lb-escada-txt"><b style="color:${t.cor}">${t.nome}</b><i>${faixa}</i><small>${t.desc||''}</small></span>`+
+      `</div>`;
+    }).join('');
+  }
+  function toggleEscada(){
+    const box=document.getElementById('lb-escada'); if(!box) return;
+    box.hidden = !box.hidden;
+  }
+
+  async function atualizaBarra(){
+    const el=document.getElementById('acc-rating'); if(!el) return;
+    const u=Auth.user();
+    if(!u || u.provider==='guest'){ el.textContent=''; return; }
+    try{ const p=await Ranked.profile(); if(p){ const t=Ranked.tier(p.rating);
+      el.innerHTML=`<b style="color:${t.cor}">${t.nome}</b> ${p.rating}`; } }
+    catch(e){ el.textContent=''; }
+  }
+
+  function accountAction(){ if(Auth.isLogged() && Auth.user().provider!=='guest') Auth.signOut(); else goto('login'); }
+  function guest(){ Auth.playAsGuest(); goto('menu'); }
+
+  async function doLogin(ev){
+    ev.preventDefault();
+    const msg=document.getElementById('li-msg'); msg.textContent='';
+    try{
+      await Auth.signIn(document.getElementById('li-email').value, document.getElementById('li-pass').value);
+      document.getElementById('li-pass').value='';
+      toast('Bem-vindo, '+Auth.user().nick+'!'); goto('menu');
+    }catch(e){ msg.textContent='⚠ '+e.message; }
+    return false;
+  }
+  async function doSignup(ev){
+    ev.preventDefault();
+    const msg=document.getElementById('su-msg'); msg.textContent='';
+    const p1=document.getElementById('su-pass').value, p2=document.getElementById('su-pass2').value;
+    if(p1!==p2){ msg.textContent='⚠ As senhas não são iguais.'; return false; }
+    try{
+      await Auth.signUp(document.getElementById('su-email').value, p1, document.getElementById('su-nick').value);
+      document.getElementById('su-pass').value=''; document.getElementById('su-pass2').value='';
+      toast('Conta criada! Boa luta, '+Auth.user().nick); goto('menu');
+    }catch(e){ msg.textContent='⚠ '+e.message; }
+    return false;
+  }
+
+  return { showLeaderboard, atualizaBarra, toggleEscada,
+           online, pintarOnline, accountAction, guest, doLogin, doSignup,
+           showProfile, showAvatarPicker, escolherAvatar, pintarBarraAvatar };
+})();
+
+function toast(msg){
+  let el=document.getElementById('toast');
+  if(!el){ el=document.createElement('div'); el.id='toast'; el.className='toast'; document.body.appendChild(el); }
+  el.textContent=msg; el.style.display='block';
+  clearTimeout(el._t); el._t=setTimeout(()=>{ el.style.display='none'; }, 1800);
+}
+
+/* popup de SKIN NOVA DESBLOQUEADA (js/ranked.js chama depois de uma
+   vitória ranqueada que cruza o requisito de alguma skin — ver
+   `Ranked.verificarSkins`). Mais chamativo que o toast normal porque é
+   um evento raro (hoje só a Skin Honesta do Fat Smerg, 10 vitórias). */
+function mostrarSkinPopup(charId, skin){
+  if(typeof Characters==='undefined') return;
+  const c=Characters.byId(charId); if(!c) return;
+  let el=document.getElementById('skin-popup');
+  if(!el){ el=document.createElement('div'); el.id='skin-popup'; el.className='skin-popup'; document.body.appendChild(el); }
+  el.innerHTML =
+    `<div class="sp-card">`+
+      `<button class="sp-x" onclick="document.getElementById('skin-popup').classList.remove('on')">✕</button>`+
+      `<canvas class="sp-cv" width="96" height="96"></canvas>`+
+      `<div class="sp-txt">`+
+        `<div class="sp-tag">🎉 NOVA SKIN DESBLOQUEADA!</div>`+
+        `<div class="sp-nome"><b>${c.name}</b> — ${skin.nome}</div>`+
+        `<div class="sp-desc">${skin.desc||''}</div>`+
+      `</div>`+
+    `</div>`;
+  const cv=el.querySelector('.sp-cv');
+  if(cv && typeof Sprites!=='undefined'){
+    const view = (typeof Sprites.skinOf==='function')? Sprites.skinOf(c, skin.id) : c;
+    Sprites.renderTo(cv, view, 'win', 2.2, 0);
+  }
+  el.classList.add('on');
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.classList.remove('on'), 7000);
+}
+
+/* pilha de telas visitadas — alimenta o botão VOLTAR global. Cada
+   goto() empilha de onde saiu; voltarGlobal() desempilha e troca de
+   tela de novo SEM re-empilhar (senão vira ping-pong infinito). */
+let navHistory = [];
+function goto(s, semHistorico){
+  const atualEl = document.querySelector('.screen.active');
+  const atual = atualEl ? atualEl.id.replace('screen-','') : null;
+  if(!semHistorico && atual && atual!==s) navHistory.push(atual);
+  document.querySelectorAll('.screen').forEach(e=>e.classList.remove('active'));
+  const el=document.getElementById('screen-'+s);
+  if(el) el.classList.add('active');
+  if(s!=='catalogo') Catalog.stop();
+  if(s==='catalogo') Catalog.init();
+  if(s==='patchnotes') PatchNotes.render();
+  /* o hub só desenha (cenário + sprite) enquanto o menu está na tela */
+  if(typeof Hub!=='undefined'){ if(s==='menu') Hub.abrir(); else Hub.fechar(); }
+  /* modo espectador: saiu da lista → para de ouvir a lista; saiu da
+     batalha assistida (VOLTAR global, menu…) → para de ouvir a sala. */
+  if(typeof Espectador!=='undefined'){
+    if(s!=='aovivo') Espectador.pararLista();
+    if(s!=='battle' && Espectador.assistindo) Espectador.pararSala();
+  }
+  if(s==='online' && typeof Menu!=='undefined') Menu.pintarOnline();
+  const back=document.getElementById('global-back');
+  if(back) back.hidden = (s==='menu' || s==='mundo');   // o mundo tem o próprio menu (☰)
+  /* no mundo aberto a barra de conta e o VOLTAR somem: a tela é o mapa inteiro */
+  document.body.classList.toggle('em-mundo', s==='mundo');
+}
+/* botão VOLTAR fixo: funciona em qualquer tela, mesmo uma travada por
+   algum bug de layout — nunca precisa de F5. Em telas com uma operação
+   de rede em andamento (fila, draft, batalha online) ele sai com
+   segurança em vez de só trocar de div e deixar a conexão pendurada. */
+function voltarGlobal(){
+  const atualEl = document.querySelector('.screen.active');
+  const atual = atualEl ? atualEl.id.replace('screen-','') : null;
+  if(atual==='matchmaking'){ Online.cancelar(); return; }
+  if(atual==='draft' || atual==='battle'){ navHistory=[]; goto('menu', true); return; }
+  const prev = navHistory.pop();
+  goto(prev || 'menu', true);
+}
+
+/* barra de conta reage ao login/logout */
+Auth.onChange(u=>{
+  const nick=document.getElementById('acc-nick'), tag=document.getElementById('acc-tag'), btn=document.getElementById('acc-btn');
+  if(!nick) return;
+  if(u){ nick.textContent=u.nick; tag.textContent = u.provider==='guest'?'convidado':'perfil local';
+         btn.textContent = u.provider==='guest'?'ENTRAR':'SAIR'; }
+  else { nick.textContent='Convidado'; tag.textContent='sem conta'; btn.textContent='ENTRAR'; }
+});
+/* rating na barra + limpa cache ao trocar de conta */
+Auth.onChange(u=>{ Ranked.clearCache(); Menu.atualizaBarra(); Menu.pintarBarraAvatar(); });
+
+/* avisa quando o backend (nuvem x local) ficar pronto */
+window.addEventListener('arena-backend', e=>{
+  const cloud=e.detail && e.detail.cloud;
+  const sub=document.getElementById('online-sub');
+  if(sub) sub.textContent = cloud? 'ranqueada e ranking' : 'ranqueada e ranking (local)';
+  const tag=document.getElementById('acc-tag');
+  if(tag && !cloud && Auth.isLogged() && Auth.user().provider==='local') tag.textContent='perfil local';
+  Menu.atualizaBarra(); Menu.pintarBarraAvatar();
+});
+
+Auth.restore();
+/* `const Characters` NÃO vira window.Characters — o teste antigo com
+   window.* era sempre falso e o preload nunca rodava. As folhas acabavam
+   carregando "na hora do uso", o que faz o Mecas piscar vazio bem no
+   frame da transformação (a folha da nova forma ainda nem baixou). */
+if(typeof Characters!=='undefined' && Characters.preload) Characters.preload();
+/* o menu já começa ativo: liga o hub sem passar por goto() */
+if(typeof Hub!=='undefined') Hub.abrir();
+</script>
+
+<!-- Firebase (módulo): só conecta se js/firebase-config.js estiver preenchido -->
+<script type="module" src="js/firebase-init.js?v=11"></script>
+<script>
+</script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<!-- FERRAMENTA (como o sheet-debug.html): mostra um atlas de tiles com a
+     grade de 32px e o número de cada célula (coluna,linha). Serve pra achar
+     a coordenada de um tile e preencher o dicionário de js/ow_arte.js.
+     Uso: modohistoria/atlas-debug.html?img=terreno/terrain_atlas.png&z=2&x0=0&y0=0&w=1024&h=1024 -->
+<html lang="pt-br"><head><meta charset="utf-8"><title>Atlas debug</title>
+<style>
+  body{background:#222;color:#ddd;font:11px monospace;margin:0}
+  canvas{image-rendering:pixelated;display:block}
+  #info{position:fixed;right:6px;top:6px;background:#000c;padding:6px}
+</style></head><body>
+<div id="info"></div>
+<canvas id="c"></canvas>
+<script>
+const q=new URLSearchParams(location.search);
+const src=q.get('img')||'terreno/terrain_atlas.png', z=+q.get('z')||2, g=+q.get('g')||32;
+const x0=+q.get('x0')||0, y0=+q.get('y0')||0;
+const img=new Image();
+img.onload=()=>{
+  const w=+q.get('w')||img.width-x0, h=+q.get('h')||img.height-y0;
+  const c=document.getElementById('c'); c.width=w*z; c.height=h*z;
+  const x=c.getContext('2d'); x.imageSmoothingEnabled=false;
+  // xadrez pra ver transparência
+  for(let j=0;j<h/8;j++)for(let i=0;i<w/8;i++){ x.fillStyle=(i+j)%2?'#555':'#444'; x.fillRect(i*8*z,j*8*z,8*z,8*z); }
+  x.drawImage(img,x0,y0,w,h,0,0,w*z,h*z);
+  x.strokeStyle='rgba(255,0,255,.55)'; x.lineWidth=1;
+  for(let i=0;i<=w;i+=g){ x.beginPath(); x.moveTo(i*z+.5,0); x.lineTo(i*z+.5,h*z); x.stroke(); }
+  for(let j=0;j<=h;j+=g){ x.beginPath(); x.moveTo(0,j*z+.5); x.lineTo(w*z,j*z+.5); x.stroke(); }
+  x.font=(Math.max(8,5*z))+'px monospace'; x.fillStyle='#ff0';
+  for(let j=0;j<h;j+=g)for(let i=0;i<w;i+=g){ x.fillText(((x0+i)/g)+','+((y0+j)/g), i*z+2, j*z+9); }
+  document.getElementById('info').textContent=src+' '+img.width+'x'+img.height;
+  c.onmousemove=e=>{ const r=c.getBoundingClientRect(); const px=x0+Math.floor((e.clientX-r.left)/z), py=y0+Math.floor((e.clientY-r.top)/z);
+    document.getElementById('info').textContent=src+'  px '+px+','+py+'  tile '+Math.floor(px/g)+','+Math.floor(py/g); };
+};
+img.src=src.startsWith('../')?src:'assets/'+src;
+</script></body></html>

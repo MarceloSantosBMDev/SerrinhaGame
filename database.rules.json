@@ -1,0 +1,76 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "fila": {
+      "$modo": {
+        ".read": "auth != null",
+        /* IMPORTANTE: o matchmaking usa runTransaction() no nó $modo
+           inteiro (para "reivindicar" um adversário sem corrida — ver
+           net.js). Transações do RTDB exigem permissão de escrita no
+           NÓ TRANSACIONADO em si, não basta liberar só os filhos $uid;
+           sem esta linha, toda transação (mesmo a mais simples, "me
+           adicionar na fila") falhava com permission_denied. A validação
+           de formato dos dados continua garantida pelas regras do $uid
+           logo abaixo — isso aqui só abre a "porta" para a transação,
+           não relaxa o que pode ser escrito.                          */
+        ".write": "auth != null",
+        "$uid": {
+          ".validate": "!newData.exists() || newData.hasChildren(['nick','ts'])",
+          "nick":   { ".validate": "newData.isString() && newData.val().length <= 20" },
+          "rating": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5000" },
+          "charId": { ".validate": "newData.isString() && newData.val().length <= 40" },
+          /* time = os TRÊS lutadores da ranqueada 3x3 por turnos.
+             Sem esta linha o "$outro: false" logo abaixo REJEITA a
+             entrada inteira na fila (a ranqueada nem chega a parear). */
+          "time":   { ".validate": "newData.hasChildren()" },
+          "ts":     { ".validate": "newData.isNumber()" },
+          "$outro": { ".validate": false }
+        }
+      }
+    },
+
+    "convites": {
+      "$uid": {
+        ".read":  "auth != null && auth.uid === $uid",
+        ".write": "auth != null"
+      }
+    },
+
+    /* MODO ESPECTADOR: índice público das ranqueadas acontecendo agora.
+       Leitura liberada pra QUALQUER UM (inclusive sem conta). Quem
+       escreve é o anfitrião da partida (logado). */
+    "aoVivo": {
+      ".read": true,
+      "$sala": {
+        ".write": "auth != null",
+        ".validate": "!newData.exists() || newData.hasChildren(['host','guest','inicio'])"
+      }
+    },
+
+    "salas": {
+      "$sala": {
+        ".read":  "auth != null",
+        ".write": "auth != null",
+        /* dois formatos de snapshot convivem aqui:
+             ['a','b']              → luta 1x1 casual (dois lutadores)
+             ['aliado','inimigo']   → ranqueada 3x3 por turnos
+           snap/ev/saiu têm leitura PÚBLICA: é exatamente o que o
+           espectador ouve (estado da batalha, draft e "acabou"). Escrita
+           continua só pra quem está logado. */
+        "snap":  { ".read": true, ".validate": "!newData.exists() || newData.hasChildren(['a','b']) || newData.hasChildren(['aliado','inimigo'])" },
+        "ev":    { ".read": true },
+        "saiu":  { ".read": true },
+        "input": { ".validate": true }
+      }
+    },
+
+    "sinal": {
+      "$sala": {
+        ".read":  "auth != null",
+        ".write": "auth != null"
+      }
+    }
+  }
+}
